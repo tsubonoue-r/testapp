@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工事看板写真システム</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .app {
+            max-width: 428px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        header p {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 16px;
+            text-align: center;
+            background: none;
+            border: none;
+            font-size: 14px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: 600;
+        }
+
+        .content {
+            padding: 16px;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 1px solid #e0e0e0;
+        }
+
+        .card h3 {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .card-meta {
+            display: flex;
+            gap: 12px;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge.status-progress {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .badge.status-planned {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .badge.status-completed {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .photo-item {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 32px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .signboard {
+            background: #fff8e1;
+            border: 3px solid #f57c00;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 16px 0;
+            text-align: center;
+        }
+
+        .signboard h2 {
+            font-size: 18px;
+            color: #e65100;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #f57c00;
+            padding-bottom: 8px;
+        }
+
+        .signboard-content {
+            font-size: 14px;
+            line-height: 1.8;
+            color: #333;
+            text-align: left;
+        }
+
+        .signboard-content div {
+            margin: 4px 0;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 16px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s;
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <header>
+            <h1>📸 工事看板写真システム</h1>
+            <p>案件と写真を簡単管理</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('projects')">案件</button>
+            <button class="tab" onclick="switchTab('signboards')">看板</button>
+            <button class="tab" onclick="switchTab('photos')">写真</button>
+        </div>
+
+        <div class="content">
+            <!-- 案件セクション -->
+            <div id="projects" class="section active">
+                <div class="card">
+                    <h3>道路拡張工事</h3>
+                    <div class="card-meta">
+                        <span>📍 東京都千代田区</span>
+                        <span class="badge status-progress">進行中</span>
+                    </div>
+                    <div class="card-meta">
+                        <span>📅 2025年1月〜2025年12月</span>
+                    </div>
+                    <p style="font-size: 14px; color: #666; margin-top: 8px;">
+                        国道123号線の拡張工事
+                    </p>
+                    <div class="photo-grid">
+                        <div class="photo-item">📷</div>
+                        <div class="photo-item">📷</div>
+                        <div class="photo-item">📷</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>橋梁補修工事</h3>
+                    <div class="card-meta">
+                        <span>📍 神奈川県横浜市</span>
+                        <span class="badge status-planned">計画中</span>
+                    </div>
+                    <div class="card-meta">
+                        <span>📅 2025年4月〜2025年9月</span>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary">➕ 新しい案件を作成</button>
+            </div>
+
+            <!-- 看板セクション -->
+            <div id="signboards" class="section">
+                <div class="card">
+                    <h3>道路拡張工事看板</h3>
+                    <div class="card-meta">
+                        <span>🏗️ 道路拡張工事</span>
+                    </div>
+
+                    <div class="signboard">
+                        <h2>【道路拡張工事】</h2>
+                        <div class="signboard-content">
+                            <div><strong>工事期間:</strong> 2025年1月〜2025年12月</div>
+                            <div><strong>施工会社:</strong> 株式会社建設テック</div>
+                            <div><strong>監督者:</strong> 山田太郎</div>
+                            <div><strong>連絡先:</strong> 03-1234-5678</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary">➕ 新しい看板を作成</button>
+            </div>
+
+            <!-- 写真セクション -->
+            <div id="photos" class="section">
+                <div class="card">
+                    <h3>着工前の現場写真</h3>
+                    <div class="card-meta">
+                        <span>🏗️ 道路拡張工事</span>
+                        <span>📅 2025/01/15</span>
+                    </div>
+                    <div style="aspect-ratio: 16/9; background: linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%); border-radius: 8px; margin-top: 12px; display: flex; align-items: center; justify-content: center; font-size: 48px; color: #666;">
+                        📷
+                    </div>
+                    <p style="font-size: 13px; color: #666; margin-top: 8px;">
+                        site-photo-001.jpg • 1920x1080 • 2.0 MB
+                    </p>
+                </div>
+
+                <div class="card">
+                    <h3>基礎工事進捗</h3>
+                    <div class="card-meta">
+                        <span>🏗️ 道路拡張工事</span>
+                        <span>📅 2025/02/10</span>
+                    </div>
+                    <div style="aspect-ratio: 16/9; background: linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%); border-radius: 8px; margin-top: 12px; display: flex; align-items: center; justify-content: center; font-size: 48px; color: #666;">
+                        📷
+                    </div>
+                </div>
+
+                <button class="btn btn-primary">📸 写真を撮影</button>
+            </div>
+        </div>
+
+        <button class="fab" onclick="alert('📸 写真を撮影します')">+</button>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // タブの切り替え
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // コンテンツの切り替え
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        // デモデータの表示
+        console.log('🌸 工事看板写真システム - UIプレビュー');
+        console.log('このUIはデモ用のプロトタイプです');
+    </script>
+</body>
+</html>
