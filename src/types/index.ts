@@ -135,3 +135,33 @@ export interface ListResult<T> {
   items: T[];
   pagination: Pagination;
 }
+
+/**
+ * ユーザー
+ */
+export interface User {
+  id: string;
+  email: string;
+  password: string;
+  name: string;
+  role: UserRole;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * ユーザーロール
+ */
+export enum UserRole {
+  ADMIN = 'admin',
+  USER = 'user',
+}
+
+/**
+ * JWT ペイロード
+ */
+export interface JWTPayload {
+  userId: string;
+  email: string;
+  role: UserRole;
+}
