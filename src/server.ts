@@ -48,6 +48,11 @@ app.get('/api/health', (req: Request, res: Response) => {
   });
 });
 
+// ルートパスで動的アプリを提供
+app.get('/', (req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, '../public/app.html'));
+});
+
 // APIルート
 app.use('/api/auth', authRouter);
 app.use('/api/projects', projectsRouter);
