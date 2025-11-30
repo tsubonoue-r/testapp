@@ -15,17 +15,38 @@ class App {
     }
 
     async init() {
-        // イベントリスナー設定
-        this.setupEventListeners();
+        console.log('🚀 アプリ初期化開始');
 
-        // 初期データ読み込み
-        await this.loadProjects();
-        await this.loadSignboards();
-        await this.loadPhotos();
+        try {
+            // イベントリスナー設定
+            this.setupEventListeners();
+            console.log('✅ イベントリスナー設定完了');
 
-        this.renderProjects();
-        this.renderSignboards();
-        this.renderPhotos();
+            // 初期データ読み込み
+            await this.loadProjects();
+            console.log('✅ 案件データ読み込み完了');
+
+            await this.loadSignboards();
+            console.log('✅ 看板データ読み込み完了');
+
+            await this.loadPhotos();
+            console.log('✅ 写真データ読み込み完了');
+
+            this.renderProjects();
+            this.renderSignboards();
+            this.renderPhotos();
+
+            console.log('✅ アプリ初期化完了');
+        } catch (error) {
+            console.error('❌ アプリ初期化エラー:', error);
+            // エラーが発生してもアプリは使えるようにする
+            this.projects = [];
+            this.signboards = [];
+            this.photos = [];
+            this.renderProjects();
+            this.renderSignboards();
+            this.renderPhotos();
+        }
     }
 
     setupEventListeners() {
@@ -80,8 +101,14 @@ class App {
 
             return await response.json();
         } catch (error) {
-            console.error('API Error:', error);
-            alert('エラーが発生しました: ' + error.message);
+            console.error('❌ API Error:', error);
+            console.error('   Endpoint:', endpoint);
+            console.error('   API_BASE:', API_BASE);
+            // 初期化時のエラーは再スローせず、空の応答を返す
+            if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                console.error('   ネットワークエラー: サーバーに接続できません');
+                return { success: false, data: null };
+            }
             throw error;
         }
     }
@@ -496,7 +523,7 @@ class App {
     }
 }
 
-// アプリケーション初期化
-const app = new App();
+// アプリケーション初期化（グローバルスコープに配置）
+window.app = new App();
 
 console.log('🌸 工事看板写真システム起動');

@@ -2,7 +2,14 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="工事写真">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+    <link rel="apple-touch-icon" href="/icon-192.png">
     <title>工事看板写真システム</title>
     <style>
         * {
@@ -23,6 +30,7 @@
             background: white;
             min-height: 100vh;
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            padding-bottom: 80px;
         }
 
         header {
@@ -47,6 +55,9 @@
             display: flex;
             background: white;
             border-bottom: 1px solid #e0e0e0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
 
         .tab {
@@ -101,6 +112,7 @@
             font-size: 13px;
             color: #666;
             margin-bottom: 8px;
+            flex-wrap: wrap;
         }
 
         .badge {
@@ -111,7 +123,7 @@
             font-weight: 500;
         }
 
-        .badge.status-progress {
+        .badge.status-in_progress {
             background: #e3f2fd;
             color: #1976d2;
         }
@@ -142,6 +154,13 @@
             justify-content: center;
             color: #999;
             font-size: 32px;
+            overflow: hidden;
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .btn {
@@ -161,37 +180,18 @@
             color: white;
         }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        .btn-primary:active {
+            transform: translateY(2px);
         }
 
-        .signboard {
-            background: #fff8e1;
-            border: 3px solid #f57c00;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 16px 0;
-            text-align: center;
-        }
-
-        .signboard h2 {
-            font-size: 18px;
-            color: #e65100;
-            margin-bottom: 12px;
-            border-bottom: 2px solid #f57c00;
-            padding-bottom: 8px;
-        }
-
-        .signboard-content {
-            font-size: 14px;
-            line-height: 1.8;
+        .btn-secondary {
+            background: #f5f5f5;
             color: #333;
-            text-align: left;
         }
 
-        .signboard-content div {
-            margin: 4px 0;
+        .btn-danger {
+            background: #f44336;
+            color: white;
         }
 
         .empty-state {
@@ -208,7 +208,7 @@
         .fab {
             position: fixed;
             bottom: 24px;
-            right: 24px;
+            right: max(calc((100vw - 428px) / 2 + 24px), 24px);
             width: 56px;
             height: 56px;
             border-radius: 50%;
@@ -219,10 +219,147 @@
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
             transition: all 0.3s;
+            z-index: 100;
         }
 
-        .fab:hover {
-            transform: scale(1.1);
+        .fab:active {
+            transform: scale(0.9);
+        }
+
+        /* モーダル */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            max-width: 400px;
+            width: 90%;
+            border-radius: 16px;
+            overflow: hidden;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            padding: 0 20px 20px;
+        }
+
+        .modal-actions button {
+            flex: 1;
+        }
+
+        /* カメラUI */
+        .camera-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4/3;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .camera-container video,
+        .camera-container canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .camera-container canvas {
+            display: none;
+        }
+
+        .camera-controls {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .camera-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #667eea;
+            color: white;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .card-actions button {
+            flex: 1;
+            padding: 8px;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -230,125 +367,157 @@
     <div class="app">
         <header>
             <h1>📸 工事看板写真システム</h1>
-            <p>案件と写真を簡単管理</p>
+            <p id="header-subtitle">案件と写真を簡単管理</p>
         </header>
 
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('projects')">案件</button>
-            <button class="tab" onclick="switchTab('signboards')">看板</button>
-            <button class="tab" onclick="switchTab('photos')">写真</button>
+            <button class="tab active" data-tab="projects">案件</button>
+            <button class="tab" data-tab="signboards">看板</button>
+            <button class="tab" data-tab="photos">写真</button>
         </div>
 
         <div class="content">
             <!-- 案件セクション -->
             <div id="projects" class="section active">
-                <div class="card">
-                    <h3>道路拡張工事</h3>
-                    <div class="card-meta">
-                        <span>📍 東京都千代田区</span>
-                        <span class="badge status-progress">進行中</span>
-                    </div>
-                    <div class="card-meta">
-                        <span>📅 2025年1月〜2025年12月</span>
-                    </div>
-                    <p style="font-size: 14px; color: #666; margin-top: 8px;">
-                        国道123号線の拡張工事
-                    </p>
-                    <div class="photo-grid">
-                        <div class="photo-item">📷</div>
-                        <div class="photo-item">📷</div>
-                        <div class="photo-item">📷</div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <h3>橋梁補修工事</h3>
-                    <div class="card-meta">
-                        <span>📍 神奈川県横浜市</span>
-                        <span class="badge status-planned">計画中</span>
-                    </div>
-                    <div class="card-meta">
-                        <span>📅 2025年4月〜2025年9月</span>
-                    </div>
-                </div>
-
-                <button class="btn btn-primary">➕ 新しい案件を作成</button>
+                <div id="projects-list"></div>
+                <button class="btn btn-primary" onclick="app.showCreateProjectModal()">➕ 新しい案件を作成</button>
             </div>
 
             <!-- 看板セクション -->
             <div id="signboards" class="section">
-                <div class="card">
-                    <h3>道路拡張工事看板</h3>
-                    <div class="card-meta">
-                        <span>🏗️ 道路拡張工事</span>
-                    </div>
-
-                    <div class="signboard">
-                        <h2>【道路拡張工事】</h2>
-                        <div class="signboard-content">
-                            <div><strong>工事期間:</strong> 2025年1月〜2025年12月</div>
-                            <div><strong>施工会社:</strong> 株式会社建設テック</div>
-                            <div><strong>監督者:</strong> 山田太郎</div>
-                            <div><strong>連絡先:</strong> 03-1234-5678</div>
-                        </div>
-                    </div>
-                </div>
-
-                <button class="btn btn-primary">➕ 新しい看板を作成</button>
+                <div id="signboards-list"></div>
+                <button class="btn btn-primary" onclick="app.showCreateSignboardModal()">➕ 新しい看板を作成</button>
             </div>
 
             <!-- 写真セクション -->
             <div id="photos" class="section">
-                <div class="card">
-                    <h3>着工前の現場写真</h3>
-                    <div class="card-meta">
-                        <span>🏗️ 道路拡張工事</span>
-                        <span>📅 2025/01/15</span>
-                    </div>
-                    <div style="aspect-ratio: 16/9; background: linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%); border-radius: 8px; margin-top: 12px; display: flex; align-items: center; justify-content: center; font-size: 48px; color: #666;">
-                        📷
-                    </div>
-                    <p style="font-size: 13px; color: #666; margin-top: 8px;">
-                        site-photo-001.jpg • 1920x1080 • 2.0 MB
-                    </p>
-                </div>
-
-                <div class="card">
-                    <h3>基礎工事進捗</h3>
-                    <div class="card-meta">
-                        <span>🏗️ 道路拡張工事</span>
-                        <span>📅 2025/02/10</span>
-                    </div>
-                    <div style="aspect-ratio: 16/9; background: linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%); border-radius: 8px; margin-top: 12px; display: flex; align-items: center; justify-content: center; font-size: 48px; color: #666;">
-                        📷
-                    </div>
-                </div>
-
-                <button class="btn btn-primary">📸 写真を撮影</button>
+                <div id="photos-list"></div>
             </div>
         </div>
 
-        <button class="fab" onclick="alert('📸 写真を撮影します')">+</button>
+        <button class="fab" onclick="app.showCameraModal()">📸</button>
     </div>
 
-    <script>
-        function switchTab(tabName) {
-            // タブの切り替え
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            event.target.classList.add('active');
+    <!-- 案件作成/編集モーダル -->
+    <div id="project-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="project-modal-title">新しい案件を作成</h2>
+            </div>
+            <div class="modal-body">
+                <form id="project-form">
+                    <div class="form-group">
+                        <label>案件名 *</label>
+                        <input type="text" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>場所 *</label>
+                        <input type="text" name="location" required>
+                    </div>
+                    <div class="form-group">
+                        <label>説明</label>
+                        <textarea name="description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>開始日 *</label>
+                        <input type="date" name="startDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>終了日</label>
+                        <input type="date" name="endDate">
+                    </div>
+                    <div class="form-group">
+                        <label>ステータス</label>
+                        <select name="status">
+                            <option value="planned">計画中</option>
+                            <option value="in_progress">進行中</option>
+                            <option value="completed">完了</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeModal('project-modal')">キャンセル</button>
+                <button class="btn btn-primary" onclick="app.saveProject()">保存</button>
+            </div>
+        </div>
+    </div>
 
-            // コンテンツの切り替え
-            document.querySelectorAll('.section').forEach(section => {
-                section.classList.remove('active');
-            });
-            document.getElementById(tabName).classList.add('active');
-        }
+    <!-- 看板作成/編集モーダル -->
+    <div id="signboard-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>新しい看板を作成</h2>
+            </div>
+            <div class="modal-body">
+                <form id="signboard-form">
+                    <div class="form-group">
+                        <label>案件 *</label>
+                        <select name="projectId" id="signboard-project-select" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>タイトル *</label>
+                        <input type="text" name="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label>工事名</label>
+                        <input type="text" name="projectName">
+                    </div>
+                    <div class="form-group">
+                        <label>工事期間</label>
+                        <input type="text" name="constructionPeriod">
+                    </div>
+                    <div class="form-group">
+                        <label>施工会社</label>
+                        <input type="text" name="contractor">
+                    </div>
+                    <div class="form-group">
+                        <label>監督者</label>
+                        <input type="text" name="supervisor">
+                    </div>
+                    <div class="form-group">
+                        <label>連絡先</label>
+                        <input type="text" name="contact">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeModal('signboard-modal')">キャンセル</button>
+                <button class="btn btn-primary" onclick="app.saveSignboard()">保存</button>
+            </div>
+        </div>
+    </div>
 
-        // デモデータの表示
-        console.log('🌸 工事看板写真システム - UIプレビュー');
-        console.log('このUIはデモ用のプロトタイプです');
-    </script>
+    <!-- カメラモーダル -->
+    <div id="camera-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📸 写真を撮影</h2>
+            </div>
+            <div class="modal-body">
+                <div class="camera-container">
+                    <video id="camera-video" autoplay playsinline></video>
+                    <canvas id="camera-canvas"></canvas>
+                </div>
+                <div class="form-group">
+                    <label>案件を選択 *</label>
+                    <select id="camera-project-select" required></select>
+                </div>
+                <div class="form-group">
+                    <label>キャプション</label>
+                    <input type="text" id="camera-caption" placeholder="写真の説明">
+                </div>
+                <div class="camera-controls">
+                    <button class="camera-btn" onclick="app.capturePhoto()">📷 撮影</button>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeCameraModal()">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/app.js?v=2"></script>
+    <script src="/pwa-init.js?v=2"></script>
 </body>
 </html>
