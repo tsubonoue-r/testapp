@@ -160,6 +160,33 @@ router.patch('/:id/status', (req: Request, res: Response) => {
 });
 
 /**
+ * PATCH /api/projects/:id/archive
+ * 案件をアーカイブ/アンアーカイブ
+ */
+router.patch('/:id/archive', (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { archived } = req.body;
+
+    const project = projectService.update(id, { archived: archived ? 1 : 0 });
+
+    res.json({
+      success: true,
+      data: project,
+      message: archived ? '案件をアーカイブしました' : '案件をアンアーカイブしました',
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: {
+        code: 'ARCHIVE_ERROR',
+        message: error instanceof Error ? error.message : '不明なエラー',
+      },
+    });
+  }
+});
+
+/**
  * DELETE /api/projects/:id
  * 案件を削除
  */

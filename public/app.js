@@ -38,6 +38,9 @@ class App {
         this.selectionMode = false;
         this.selectedPhotos = new Set();
 
+        // 案件アーカイブ機能用
+        this.showArchivedProjects = false;
+
         this.init();
     }
 
@@ -152,20 +155,29 @@ class App {
     renderProjects() {
         const container = document.getElementById('projects-list');
 
-        if (this.projects.length === 0) {
+        // アーカイブフィルタリング
+        const filteredProjects = this.projects.filter(project => {
+            if (this.showArchivedProjects) {
+                return true; // 全て表示
+            } else {
+                return !project.archived; // アーカイブ済みを除外
+            }
+        });
+
+        if (filteredProjects.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">📋</div>
-                    <p>まだ案件がありません</p>
+                    <p>${this.showArchivedProjects ? 'アーカイブ済みの案件がありません' : 'まだ案件がありません'}</p>
                     <p style="font-size: 13px; margin-top: 8px;">「新しい案件を作成」ボタンから追加してください</p>
                 </div>
             `;
             return;
         }
 
-        container.innerHTML = this.projects.map(project => `
-            <div class="card">
-                <h3>${this.escapeHtml(project.name)}</h3>
+        container.innerHTML = filteredProjects.map(project => `
+            <div class="card" style="${project.archived ? 'opacity: 0.7; border-left: 4px solid #999;' : ''}">
+                <h3>${this.escapeHtml(project.name)} ${project.archived ? '📦' : ''}</h3>
                 <div class="card-meta">
                     <span>📍 ${this.escapeHtml(project.location)}</span>
                     <span class="badge status-${project.status}">${this.getStatusLabel(project.status)}</span>
@@ -176,6 +188,9 @@ class App {
                 ${project.description ? `<p style="font-size: 14px; color: #666; margin-top: 8px;">${this.escapeHtml(project.description)}</p>` : ''}
                 <div class="card-actions">
                     <button class="btn btn-secondary" onclick="app.editProject('${project.id}')">編集</button>
+                    <button class="btn ${project.archived ? 'btn-primary' : 'btn-secondary'}" onclick="app.archiveProject('${project.id}', ${!project.archived})">
+                        ${project.archived ? '📤 復元' : '📦 アーカイブ'}
+                    </button>
                     <button class="btn btn-danger" onclick="app.deleteProject('${project.id}')">削除</button>
                 </div>
             </div>
@@ -257,6 +272,28 @@ class App {
             await this.loadProjects();
             this.renderProjects();
             alert('案件を削除しました');
+        } catch (error) {
+            // エラーハンドリングはapi()で行う
+        }
+    }
+
+    // アーカイブ済み表示切り替え
+    toggleArchivedProjects() {
+        this.showArchivedProjects = document.getElementById('show-archived-projects').checked;
+        this.renderProjects();
+    }
+
+    // 案件アーカイブ/アンアーカイブ
+    async archiveProject(id, archived) {
+        try {
+            await this.api(`/projects/${id}/archive`, {
+                method: 'PATCH',
+                body: JSON.stringify({ archived }),
+            });
+
+            await this.loadProjects();
+            this.renderProjects();
+            alert(archived ? '案件をアーカイブしました' : '案件を復元しました');
         } catch (error) {
             // エラーハンドリングはapi()で行う
         }

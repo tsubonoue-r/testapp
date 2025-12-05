@@ -46,12 +46,25 @@ export function initializeDatabase() {
       start_date DATETIME NOT NULL,
       end_date DATETIME,
       status TEXT NOT NULL DEFAULT 'planned',
+      archived INTEGER NOT NULL DEFAULT 0,
       user_id TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id)
     )
   `);
+
+  // 既存のprojectsテーブルにarchivedカラムを追加（存在しない場合のみ）
+  try {
+    db.exec(`ALTER TABLE projects ADD COLUMN archived INTEGER NOT NULL DEFAULT 0`);
+    console.log('✅ projects テーブルに archived カラムを追加しました');
+  } catch (error: any) {
+    if (error.message.includes('duplicate column name')) {
+      // カラムが既に存在する場合はスキップ
+    } else {
+      throw error;
+    }
+  }
 
   // 工事看板テーブル
   db.exec(`
