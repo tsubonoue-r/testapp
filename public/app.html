@@ -477,6 +477,21 @@
                         </select>
                     </div>
                 </div>
+
+                <!-- ソート設定 -->
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 16px;">
+                    <div class="form-group" style="margin: 0;">
+                        <label>📊 ソート基準</label>
+                        <select id="photo-sort-by" onchange="app.sortPhotos()">
+                            <option value="date-desc">撮影日時（新しい順）</option>
+                            <option value="date-asc">撮影日時（古い順）</option>
+                            <option value="category">カテゴリー順</option>
+                            <option value="filename-asc">ファイル名（昇順）</option>
+                            <option value="filename-desc">ファイル名（降順）</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div style="display: flex; gap: 8px; margin-bottom: 16px;">
                     <button class="btn btn-primary" onclick="app.exportPhotosToPDF()" style="flex: 1;">📄 PDF出力</button>
                     <button class="btn btn-secondary" onclick="app.toggleSelectionMode()" id="selection-mode-btn" style="flex: 1;">✓ 選択モード</button>

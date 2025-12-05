@@ -504,6 +504,68 @@ class App {
             });
         }
 
+        // ソートを適用してから表示
+        this.sortPhotos();
+    }
+
+    // 写真一覧ソート機能
+    sortPhotos() {
+        const sortBy = document.getElementById('photo-sort-by')?.value || 'date-desc';
+
+        switch(sortBy) {
+            case 'date-desc':
+                // 撮影日時（新しい順）
+                this.photos.sort((a, b) => new Date(b.takenAt) - new Date(a.takenAt));
+                break;
+
+            case 'date-asc':
+                // 撮影日時（古い順）
+                this.photos.sort((a, b) => new Date(a.takenAt) - new Date(b.takenAt));
+                break;
+
+            case 'category':
+                // カテゴリー順（工程 → 撮影箇所 → 工種）
+                this.photos.sort((a, b) => {
+                    // 工程区分で比較
+                    const processA = a.category?.process || '';
+                    const processB = b.category?.process || '';
+                    if (processA !== processB) {
+                        return processA.localeCompare(processB);
+                    }
+
+                    // 撮影箇所で比較
+                    const locationA = a.category?.location || '';
+                    const locationB = b.category?.location || '';
+                    if (locationA !== locationB) {
+                        return locationA.localeCompare(locationB);
+                    }
+
+                    // 工種で比較
+                    const workTypeA = a.category?.workType || '';
+                    const workTypeB = b.category?.workType || '';
+                    return workTypeA.localeCompare(workTypeB);
+                });
+                break;
+
+            case 'filename-asc':
+                // ファイル名（昇順）
+                this.photos.sort((a, b) => {
+                    const filenameA = a.filename || '';
+                    const filenameB = b.filename || '';
+                    return filenameA.localeCompare(filenameB);
+                });
+                break;
+
+            case 'filename-desc':
+                // ファイル名（降順）
+                this.photos.sort((a, b) => {
+                    const filenameA = a.filename || '';
+                    const filenameB = b.filename || '';
+                    return filenameB.localeCompare(filenameA);
+                });
+                break;
+        }
+
         this.renderPhotos();
     }
 
