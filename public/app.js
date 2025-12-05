@@ -1907,6 +1907,189 @@ class App {
     }
 
     // ===================
+    // PDF設定モーダル機能
+    // ===================
+
+    showPDFSettingsModal() {
+        this.openModal('pdf-settings-modal');
+    }
+
+    closePDFSettingsModal() {
+        this.closeModal('pdf-settings-modal');
+    }
+
+    async generatePDFWithSettings() {
+        try {
+            // モーダルから設定を取得
+            const layout = parseInt(document.getElementById('pdf-layout').value);
+            const companyName = document.getElementById('pdf-company-name').value.trim();
+            const projectName = document.getElementById('pdf-project-name').value.trim();
+            const showDate = document.getElementById('pdf-show-date').checked;
+            const showPageNumber = document.getElementById('pdf-show-page-number').checked;
+
+            // 写真がない場合は警告
+            if (this.photos.length === 0) {
+                alert('出力する写真がありません');
+                return;
+            }
+
+            // PDFドキュメントを作成（A4サイズ）
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4',
+            });
+
+            const pageWidth = 210; // A4幅(mm)
+            const pageHeight = 297; // A4高さ(mm)
+            const margin = 10;
+            const headerHeight = companyName || projectName ? 20 : 0;
+            const footerHeight = showDate || showPageNumber ? 10 : 0;
+
+            // 利用可能な領域
+            const availableWidth = pageWidth - margin * 2;
+            const availableHeight = pageHeight - margin * 2 - headerHeight - footerHeight;
+
+            // レイアウト計算
+            let cols, rows;
+            switch (layout) {
+                case 1:
+                    cols = 1; rows = 1;
+                    break;
+                case 2:
+                    cols = 1; rows = 2;
+                    break;
+                case 4:
+                    cols = 2; rows = 2;
+                    break;
+                case 6:
+                    cols = 2; rows = 3;
+                    break;
+                default:
+                    cols = 2; rows = 2;
+            }
+
+            const cellWidth = availableWidth / cols;
+            const cellHeight = availableHeight / rows;
+            const imageMargin = 2;
+
+            let pageCount = 0;
+            let currentPhotoIndex = 0;
+
+            while (currentPhotoIndex < this.photos.length) {
+                if (pageCount > 0) {
+                    pdf.addPage();
+                }
+                pageCount++;
+
+                // ヘッダーを描画
+                if (headerHeight > 0) {
+                    pdf.setFontSize(14);
+                    pdf.setFont('helvetica', 'bold');
+                    let yPos = margin + 7;
+
+                    if (companyName) {
+                        pdf.text(companyName, pageWidth / 2, yPos, { align: 'center' });
+                        yPos += 6;
+                    }
+
+                    if (projectName) {
+                        pdf.setFontSize(12);
+                        pdf.setFont('helvetica', 'normal');
+                        pdf.text(projectName, pageWidth / 2, yPos, { align: 'center' });
+                    }
+
+                    // ヘッダー下に線を引く
+                    pdf.setLineWidth(0.5);
+                    pdf.line(margin, margin + headerHeight - 2, pageWidth - margin, margin + headerHeight - 2);
+                }
+
+                // 写真を配置
+                for (let row = 0; row < rows && currentPhotoIndex < this.photos.length; row++) {
+                    for (let col = 0; col < cols && currentPhotoIndex < this.photos.length; col++) {
+                        const photo = this.photos[currentPhotoIndex];
+
+                        const x = margin + col * cellWidth;
+                        const y = margin + headerHeight + row * cellHeight;
+
+                        // 画像を読み込んでPDFに追加
+                        try {
+                            const imgData = await this.loadImageAsDataURL(photo.thumbnailUrl);
+
+                            // 画像のアスペクト比を維持しながらセル内に収める
+                            const maxImgWidth = cellWidth - imageMargin * 2;
+                            const maxImgHeight = cellHeight - imageMargin * 2 - 15; // キャプション分を確保
+
+                            // 仮のサイズで画像を配置（アスペクト比維持）
+                            let imgWidth = maxImgWidth;
+                            let imgHeight = maxImgHeight;
+
+                            // 中央揃えで配置
+                            const imgX = x + imageMargin;
+                            const imgY = y + imageMargin;
+
+                            pdf.addImage(imgData, 'JPEG', imgX, imgY, imgWidth, imgHeight);
+
+                            // キャプションを追加
+                            pdf.setFontSize(8);
+                            pdf.setFont('helvetica', 'normal');
+                            const caption = this.truncateText(photo.caption || 'キャプションなし', 30);
+                            pdf.text(caption, x + cellWidth / 2, y + cellHeight - 5, { align: 'center' });
+
+                            // カテゴリー情報を追加
+                            const project = this.projects.find(p => p.id === photo.projectId);
+                            const signboard = this.signboards.find(s => s.id === photo.signboardId);
+                            const categoryText = `${project?.name || '不明'} - ${signboard?.processType || '不明'}`;
+                            const categoryTruncated = this.truncateText(categoryText, 30);
+                            pdf.setFontSize(6);
+                            pdf.text(categoryTruncated, x + cellWidth / 2, y + cellHeight - 2, { align: 'center' });
+
+                        } catch (error) {
+                            console.error('画像の読み込みに失敗:', error);
+                            // エラー時はプレースホルダーを表示
+                            pdf.setFontSize(10);
+                            pdf.text('画像読み込みエラー', x + cellWidth / 2, y + cellHeight / 2, { align: 'center' });
+                        }
+
+                        currentPhotoIndex++;
+                    }
+                }
+
+                // フッターを描画
+                if (footerHeight > 0) {
+                    const footerY = pageHeight - margin - 5;
+                    pdf.setFontSize(8);
+                    pdf.setFont('helvetica', 'normal');
+
+                    if (showDate) {
+                        const dateStr = new Date().toLocaleDateString('ja-JP');
+                        pdf.text(dateStr, margin, footerY);
+                    }
+
+                    if (showPageNumber) {
+                        const totalPages = Math.ceil(this.photos.length / layout);
+                        pdf.text(`${pageCount} / ${totalPages}`, pageWidth - margin, footerY, { align: 'right' });
+                    }
+                }
+            }
+
+            // PDFを保存
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            const filename = `photos_${timestamp}.pdf`;
+            pdf.save(filename);
+
+            // モーダルを閉じる
+            this.closePDFSettingsModal();
+
+            alert(`PDFを出力しました: ${filename}`);
+        } catch (error) {
+            console.error('PDF出力エラー:', error);
+            alert('PDF出力に失敗しました: ' + error.message);
+        }
+    }
+
+    // ===================
     // 写真一括管理機能
     // ===================
 

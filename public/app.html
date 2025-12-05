@@ -556,7 +556,7 @@
                 </div>
 
                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px;">
-                    <button class="btn btn-primary" onclick="app.exportPhotosToPDF()">📄 PDF</button>
+                    <button class="btn btn-primary" onclick="app.showPDFSettingsModal()">📄 PDF</button>
                     <button class="btn btn-secondary" onclick="app.exportPhotos('json')">📥 JSON</button>
                     <button class="btn btn-secondary" onclick="app.exportPhotos('csv')">📥 CSV</button>
                     <button class="btn btn-secondary" onclick="app.toggleSelectionMode()" id="selection-mode-btn">✓ 選択</button>
@@ -800,6 +800,50 @@
             </div>
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="app.closeComparisonModal()">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF出力設定モーダル -->
+    <div id="pdf-settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📄 PDF出力設定</h2>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>レイアウト</label>
+                    <select id="pdf-layout">
+                        <option value="1">1枚/ページ</option>
+                        <option value="2">2枚/ページ</option>
+                        <option value="4" selected>4枚/ページ</option>
+                        <option value="6">6枚/ページ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>会社名（ヘッダー）</label>
+                    <input type="text" id="pdf-company-name" placeholder="例: 株式会社○○建設">
+                </div>
+                <div class="form-group">
+                    <label>案件名（ヘッダー）</label>
+                    <input type="text" id="pdf-project-name" placeholder="自動設定">
+                </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="pdf-show-date" checked style="width: 20px; height: 20px;">
+                        <span>日付を表示（フッター）</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="pdf-show-page-number" checked style="width: 20px; height: 20px;">
+                        <span>ページ番号を表示</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closePDFSettingsModal()">キャンセル</button>
+                <button class="btn btn-primary" onclick="app.generatePDFWithSettings()">📄 PDF生成</button>
             </div>
         </div>
     </div>
