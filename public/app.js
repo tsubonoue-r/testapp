@@ -1346,6 +1346,176 @@ class App {
         this.annotationCanvas = null;
         this.annotationCtx = null;
     }
+
+    // ===================
+    // PDF出力機能
+    // ===================
+
+    async exportPhotosToPDF() {
+        if (this.photos.length === 0) {
+            alert('出力する写真がありません');
+            return;
+        }
+
+        try {
+            // jsPDFの初期化
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            const pageWidth = 210; // A4幅（mm）
+            const pageHeight = 297; // A4高さ（mm）
+            const margin = 15;
+            const photosPerPage = 4;
+            const cols = 2;
+            const rows = 2;
+
+            // 利用可能な幅と高さ
+            const availableWidth = pageWidth - (margin * 2);
+            const availableHeight = pageHeight - (margin * 2);
+
+            // 各写真の配置サイズ
+            const photoAreaWidth = availableWidth / cols;
+            const photoAreaHeight = availableHeight / rows;
+
+            // 写真サイズ（余白を考慮）
+            const photoWidth = photoAreaWidth - 10;
+            const photoHeight = (photoAreaHeight - 25); // テキスト用のスペースを確保
+
+            let isFirstPage = true;
+
+            // 写真を4枚ずつ処理
+            for (let i = 0; i < this.photos.length; i += photosPerPage) {
+                if (!isFirstPage) {
+                    doc.addPage();
+                }
+                isFirstPage = false;
+
+                // ページ内の写真を処理（最大4枚）
+                const photosInPage = this.photos.slice(i, i + photosPerPage);
+
+                for (let j = 0; j < photosInPage.length; j++) {
+                    const photo = photosInPage[j];
+                    const col = j % cols;
+                    const row = Math.floor(j / cols);
+
+                    // 配置位置を計算
+                    const x = margin + (col * photoAreaWidth) + 5;
+                    const y = margin + (row * photoAreaHeight) + 5;
+
+                    try {
+                        // 画像をロード
+                        const imgData = await this.loadImageAsDataURL(`/uploads/${photo.filename}`);
+
+                        // 画像を追加（アスペクト比を維持）
+                        const imgWidth = photoWidth;
+                        const imgHeight = photoHeight - 5; // 少し余白を残す
+                        doc.addImage(imgData, 'JPEG', x, y, imgWidth, imgHeight);
+
+                        // キャプションを追加
+                        const textY = y + imgHeight + 8;
+                        doc.setFontSize(9);
+                        doc.setFont('helvetica', 'bold');
+                        const caption = photo.caption || '写真';
+                        doc.text(this.truncateText(caption, 25), x, textY);
+
+                        // カテゴリー情報を追加
+                        doc.setFontSize(7);
+                        doc.setFont('helvetica', 'normal');
+                        let infoText = '';
+
+                        if (photo.category) {
+                            const categoryLabels = {
+                                foundation: '基礎',
+                                structure: '躯体',
+                                finishing: '仕上げ',
+                                completion: '完成',
+                                inspection: '検査',
+                                other: 'その他'
+                            };
+                            const workTypeLabels = {
+                                architecture: '建築',
+                                electrical: '電気',
+                                plumbing: '設備',
+                                civil: '土木',
+                                landscape: '外構',
+                                other: 'その他'
+                            };
+
+                            const parts = [];
+                            if (photo.category.process) {
+                                parts.push(categoryLabels[photo.category.process] || photo.category.process);
+                            }
+                            if (photo.category.location) {
+                                parts.push(photo.category.location);
+                            }
+                            if (photo.category.workType) {
+                                parts.push(workTypeLabels[photo.category.workType] || photo.category.workType);
+                            }
+                            infoText = parts.join(' / ');
+                        }
+
+                        if (infoText) {
+                            doc.text(this.truncateText(infoText, 30), x, textY + 4);
+                        }
+
+                        // 撮影日時を追加
+                        doc.setFontSize(7);
+                        const dateText = this.formatDate(photo.takenAt);
+                        doc.text(dateText, x, textY + 8);
+
+                    } catch (error) {
+                        console.error('画像の読み込みエラー:', photo.filename, error);
+                        // エラー時は枠だけ表示
+                        doc.rect(x, y, photoWidth, photoHeight - 5);
+                        doc.setFontSize(8);
+                        doc.text('画像読み込みエラー', x + 5, y + 15);
+                    }
+                }
+            }
+
+            // PDFを保存
+            const projectId = document.getElementById('photo-project-filter')?.value;
+            const project = projectId ? this.projects.find(p => p.id === projectId) : null;
+            const filename = project
+                ? `工事写真_${project.name}_${new Date().toISOString().split('T')[0]}.pdf`
+                : `工事写真_${new Date().toISOString().split('T')[0]}.pdf`;
+
+            doc.save(filename);
+            alert(`PDFを出力しました: ${filename}`);
+
+        } catch (error) {
+            console.error('PDF出力エラー:', error);
+            alert('PDF出力に失敗しました: ' + error.message);
+        }
+    }
+
+    // 画像をDataURLとして読み込む
+    async loadImageAsDataURL(src) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = 'Anonymous';
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                resolve(canvas.toDataURL('image/jpeg', 0.85));
+            };
+            img.onerror = reject;
+            img.src = src;
+        });
+    }
+
+    // テキストを切り詰める
+    truncateText(text, maxLength) {
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength - 3) + '...';
+    }
 }
 
 // アプリケーション初期化（グローバルスコープに配置）
