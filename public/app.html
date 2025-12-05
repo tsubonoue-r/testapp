@@ -484,6 +484,7 @@
                         <span id="selection-count" style="font-weight: 600;">0枚選択中</span>
                         <div style="display: flex; gap: 8px;">
                             <button class="btn btn-secondary" onclick="app.selectAllPhotos()" style="padding: 8px 16px;">全選択</button>
+                            <button class="btn btn-primary" onclick="app.compareSelectedPhotos()" id="compare-btn" style="padding: 8px 16px; display: none;">📊 比較</button>
                             <button class="btn btn-secondary" onclick="app.bulkMovePhotos()" style="padding: 8px 16px;">📦 移動</button>
                             <button class="btn btn-danger" onclick="app.bulkDeletePhotos()" style="padding: 8px 16px;">🗑️ 削除</button>
                             <button class="btn btn-secondary" onclick="app.toggleSelectionMode()" style="padding: 8px 16px;">キャンセル</button>
@@ -681,6 +682,40 @@
                 <button class="btn btn-secondary" onclick="app.closeEditSignboardModal()">キャンセル</button>
                 <button class="btn btn-danger" onclick="app.clearCanvas()">全消去</button>
                 <button class="btn btn-primary" onclick="app.saveEditedSignboard()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Before/After比較モーダル -->
+    <div id="comparison-modal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>📊 Before / After 比較</h2>
+            </div>
+            <div class="modal-body">
+                <div style="position: relative; width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 8px; overflow: hidden;">
+                    <img id="comparison-before" src="" alt="Before" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;">
+                    <img id="comparison-after" src="" alt="After" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0.5;">
+                </div>
+                <div style="margin-top: 16px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">透過度調整（Before ← → After）</label>
+                    <input type="range" id="comparison-slider" min="0" max="100" value="50"
+                           oninput="app.updateComparisonOpacity(this.value)"
+                           style="width: 100%; height: 8px; border-radius: 4px; background: linear-gradient(to right, #667eea 0%, #764ba2 100%);">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
+                    <div>
+                        <p style="font-weight: 600; margin-bottom: 4px;">📷 Before</p>
+                        <p id="comparison-before-info" style="font-size: 13px; color: #666;"></p>
+                    </div>
+                    <div>
+                        <p style="font-weight: 600; margin-bottom: 4px;">📷 After</p>
+                        <p id="comparison-after-info" style="font-size: 13px; color: #666;"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeComparisonModal()">閉じる</button>
             </div>
         </div>
     </div>

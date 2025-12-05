@@ -1579,8 +1579,15 @@ class App {
 
     updateSelectionCount() {
         const countElement = document.getElementById('selection-count');
+        const compareBtn = document.getElementById('compare-btn');
+
         if (countElement) {
             countElement.textContent = `${this.selectedPhotos.size}枚選択中`;
+        }
+
+        // 2枚選択時のみ比較ボタンを表示
+        if (compareBtn) {
+            compareBtn.style.display = this.selectedPhotos.size === 2 ? 'inline-block' : 'none';
         }
     }
 
@@ -1687,6 +1694,67 @@ class App {
             console.error('一括移動エラー:', error);
             alert('一括移動に失敗しました');
         }
+    }
+
+    // ===================
+    // Before/After比較機能
+    // ===================
+
+    compareSelectedPhotos() {
+        if (this.selectedPhotos.size !== 2) {
+            alert('比較するには2枚の写真を選択してください');
+            return;
+        }
+
+        const selectedIds = Array.from(this.selectedPhotos);
+        const photo1 = this.photos.find(p => p.id === selectedIds[0]);
+        const photo2 = this.photos.find(p => p.id === selectedIds[1]);
+
+        if (!photo1 || !photo2) {
+            alert('写真の読み込みに失敗しました');
+            return;
+        }
+
+        // 撮影日時で自動的にBefore/Afterを判定
+        const [beforePhoto, afterPhoto] = photo1.takenAt < photo2.takenAt
+            ? [photo1, photo2]
+            : [photo2, photo1];
+
+        // 比較モーダルを開く
+        this.openComparisonModal(beforePhoto, afterPhoto);
+    }
+
+    openComparisonModal(beforePhoto, afterPhoto) {
+        const beforeImg = document.getElementById('comparison-before');
+        const afterImg = document.getElementById('comparison-after');
+        const beforeInfo = document.getElementById('comparison-before-info');
+        const afterInfo = document.getElementById('comparison-after-info');
+        const slider = document.getElementById('comparison-slider');
+
+        // 画像を設定
+        beforeImg.src = `/uploads/${beforePhoto.filename}`;
+        afterImg.src = `/uploads/${afterPhoto.filename}`;
+
+        // 情報を設定
+        beforeInfo.textContent = `${beforePhoto.caption || '写真'} - ${this.formatDate(beforePhoto.takenAt)}`;
+        afterInfo.textContent = `${afterPhoto.caption || '写真'} - ${this.formatDate(afterPhoto.takenAt)}`;
+
+        // スライダーをリセット
+        slider.value = 50;
+        afterImg.style.opacity = 0.5;
+
+        // モーダルを開く
+        this.openModal('comparison-modal');
+    }
+
+    updateComparisonOpacity(value) {
+        const afterImg = document.getElementById('comparison-after');
+        // 値が0-100なので、0-1に変換
+        afterImg.style.opacity = value / 100;
+    }
+
+    closeComparisonModal() {
+        this.closeModal('comparison-modal');
     }
 }
 
