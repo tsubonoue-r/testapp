@@ -328,6 +328,52 @@
             display: none;
         }
 
+        .signboard-overlay {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: #fff8e1;
+            border: 3px solid #f57c00;
+            border-radius: 8px;
+            padding: 12px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .signboard-overlay h3 {
+            font-size: 14px;
+            color: #e65100;
+            margin-bottom: 6px;
+            border-bottom: 2px solid #f57c00;
+            padding-bottom: 4px;
+        }
+
+        .signboard-overlay .content {
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .signboard-overlay .content div {
+            margin-bottom: 2px;
+        }
+
+        /* 看板編集UI */
+        .edit-canvas-container {
+            position: relative;
+            width: 100%;
+            background: #fff8e1;
+            border: 3px solid #f57c00;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .edit-canvas {
+            width: 100%;
+            display: block;
+            cursor: crosshair;
+        }
+
         .camera-controls {
             display: flex;
             gap: 8px;
@@ -504,6 +550,12 @@
                     <select id="camera-project-select" required></select>
                 </div>
                 <div class="form-group">
+                    <label>看板を選択（オーバーレイ表示）</label>
+                    <select id="camera-signboard-select">
+                        <option value="">看板なし</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label>キャプション</label>
                     <input type="text" id="camera-caption" placeholder="写真の説明">
                 </div>
@@ -513,6 +565,40 @@
             </div>
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="app.closeCameraModal()">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 看板編集モーダル -->
+    <div id="edit-signboard-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🖊️ 看板を編集（黒板モード）</h2>
+            </div>
+            <div class="modal-body">
+                <div class="edit-canvas-container">
+                    <canvas id="edit-canvas" class="edit-canvas"></canvas>
+                </div>
+                <div class="form-group">
+                    <label>描画ツール</label>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-secondary" onclick="app.setDrawTool('pen')" id="tool-pen">🖊️ ペン</button>
+                        <button class="btn btn-secondary" onclick="app.setDrawTool('eraser')" id="tool-eraser">🧹 消しゴム</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>ペンの太さ</label>
+                    <input type="range" id="pen-size" min="2" max="20" value="3" oninput="app.setPenSize(this.value)">
+                </div>
+                <div class="form-group">
+                    <label>ペンの色</label>
+                    <input type="color" id="pen-color" value="#000000" onchange="app.setPenColor(this.value)">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeEditSignboardModal()">キャンセル</button>
+                <button class="btn btn-danger" onclick="app.clearCanvas()">全消去</button>
+                <button class="btn btn-primary" onclick="app.saveEditedSignboard()">保存</button>
             </div>
         </div>
     </div>

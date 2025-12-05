@@ -11,6 +11,15 @@ class App {
         this.photos = [];
         this.currentProject = null;
         this.cameraStream = null;
+        this.currentEditingSignboard = null;
+        this.drawingCanvas = null;
+        this.drawingCtx = null;
+        this.isDrawing = false;
+        this.drawTool = 'pen';
+        this.penSize = 3;
+        this.penColor = '#000000';
+        this.lastX = 0;
+        this.lastY = 0;
         this.init();
     }
 
@@ -277,6 +286,9 @@ class App {
                             ${signboard.content.contact ? `<div><strong>連絡先:</strong> ${this.escapeHtml(signboard.content.contact)}</div>` : ''}
                         </div>
                     </div>
+                    <div class="card-actions">
+                        <button class="btn btn-secondary" onclick="app.showEditSignboardModal('${signboard.id}')">🖊️ 編集</button>
+                    </div>
                 </div>
             `;
         }).join('');
@@ -375,11 +387,20 @@ class App {
 
     async showCameraModal() {
         await this.loadProjects();
+        await this.loadSignboards();
 
-        const select = document.getElementById('camera-project-select');
-        select.innerHTML = '<option value="">案件を選択...</option>' + this.projects.map(p =>
+        const projectSelect = document.getElementById('camera-project-select');
+        projectSelect.innerHTML = '<option value="">案件を選択...</option>' + this.projects.map(p =>
             `<option value="${p.id}">${this.escapeHtml(p.name)}</option>`
         ).join('');
+
+        const signboardSelect = document.getElementById('camera-signboard-select');
+        signboardSelect.innerHTML = '<option value="">看板なし</option>' + this.signboards.map(s =>
+            `<option value="${s.id}">${this.escapeHtml(s.title)}</option>`
+        ).join('');
+
+        // 看板選択時のイベントリスナー
+        signboardSelect.onchange = () => this.updateCameraSignboardOverlay();
 
         this.openModal('camera-modal');
         await this.startCamera();
@@ -418,6 +439,7 @@ class App {
         const video = document.getElementById('camera-video');
         const canvas = document.getElementById('camera-canvas');
         const caption = document.getElementById('camera-caption').value;
+        const signboardId = document.getElementById('camera-signboard-select').value;
 
         // キャンバスにビデオフレームを描画
         canvas.width = video.videoWidth;
@@ -425,10 +447,68 @@ class App {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0);
 
+        // 看板オーバーレイを合成
+        if (signboardId) {
+            await this.drawSignboardOnCanvas(ctx, canvas, signboardId);
+        }
+
         // Blobに変換
         canvas.toBlob(async (blob) => {
             await this.uploadPhoto(blob, projectId, caption);
         }, 'image/jpeg', 0.9);
+    }
+
+    async drawSignboardOnCanvas(ctx, canvas, signboardId) {
+        const signboard = this.signboards.find(s => s.id === signboardId);
+        if (!signboard) return;
+
+        // オーバーレイの位置とサイズ
+        const padding = 20;
+        const overlayWidth = canvas.width - padding * 2;
+        const overlayHeight = 150;
+        const overlayX = padding;
+        const overlayY = canvas.height - overlayHeight - padding;
+
+        // 背景描画
+        ctx.fillStyle = 'rgba(255, 248, 225, 0.95)';
+        ctx.fillRect(overlayX, overlayY, overlayWidth, overlayHeight);
+
+        // 枠線描画
+        ctx.strokeStyle = '#f57c00';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(overlayX, overlayY, overlayWidth, overlayHeight);
+
+        // テキスト描画
+        ctx.fillStyle = '#e65100';
+        ctx.font = 'bold 24px sans-serif';
+        const titleText = `【${signboard.content.projectName || signboard.title}】`;
+        ctx.fillText(titleText, overlayX + 12, overlayY + 35);
+
+        // 区切り線
+        ctx.strokeStyle = '#f57c00';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(overlayX + 12, overlayY + 45);
+        ctx.lineTo(overlayX + overlayWidth - 12, overlayY + 45);
+        ctx.stroke();
+
+        // 詳細情報
+        ctx.fillStyle = '#000';
+        ctx.font = '16px sans-serif';
+        let textY = overlayY + 68;
+        const lineHeight = 22;
+
+        if (signboard.content.constructionPeriod) {
+            ctx.fillText(`工事期間: ${signboard.content.constructionPeriod}`, overlayX + 12, textY);
+            textY += lineHeight;
+        }
+        if (signboard.content.contractor) {
+            ctx.fillText(`施工会社: ${signboard.content.contractor}`, overlayX + 12, textY);
+            textY += lineHeight;
+        }
+        if (signboard.content.supervisor) {
+            ctx.fillText(`監督者: ${signboard.content.supervisor}`, overlayX + 12, textY);
+        }
     }
 
     async uploadPhoto(blob, projectId, caption) {
@@ -520,6 +600,214 @@ class App {
             cancelled: '中止',
         };
         return labels[status] || status;
+    }
+
+    // ===================
+    // 看板編集機能（黒板モード）
+    // ===================
+
+    showEditSignboardModal(signboardId) {
+        const signboard = this.signboards.find(s => s.id === signboardId);
+        if (!signboard) {
+            alert('看板が見つかりません');
+            return;
+        }
+
+        this.currentEditingSignboard = signboard;
+        this.openModal('edit-signboard-modal');
+
+        // Canvas初期化
+        setTimeout(() => {
+            this.initDrawingCanvas(signboard);
+        }, 100);
+    }
+
+    initDrawingCanvas(signboard) {
+        this.drawingCanvas = document.getElementById('edit-canvas');
+        this.drawingCtx = this.drawingCanvas.getContext('2d');
+
+        // Canvas サイズ設定
+        const container = this.drawingCanvas.parentElement;
+        this.drawingCanvas.width = container.clientWidth;
+        this.drawingCanvas.height = 400;
+
+        // 看板の背景を描画
+        this.drawSignboardBackground(signboard);
+
+        // イベントリスナー設定
+        this.drawingCanvas.addEventListener('mousedown', this.startDrawing.bind(this));
+        this.drawingCanvas.addEventListener('mousemove', this.draw.bind(this));
+        this.drawingCanvas.addEventListener('mouseup', this.stopDrawing.bind(this));
+        this.drawingCanvas.addEventListener('mouseout', this.stopDrawing.bind(this));
+
+        // タッチイベント対応
+        this.drawingCanvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            this.drawingCanvas.dispatchEvent(mouseEvent);
+        });
+
+        this.drawingCanvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            this.drawingCanvas.dispatchEvent(mouseEvent);
+        });
+
+        this.drawingCanvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            const mouseEvent = new MouseEvent('mouseup', {});
+            this.drawingCanvas.dispatchEvent(mouseEvent);
+        });
+    }
+
+    drawSignboardBackground(signboard) {
+        const ctx = this.drawingCtx;
+        const canvas = this.drawingCanvas;
+
+        // 背景色
+        ctx.fillStyle = '#fff8e1';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // テキスト描画
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.fillText(`【${signboard.content.projectName || signboard.title}】`, 20, 40);
+
+        ctx.font = '14px sans-serif';
+        let y = 70;
+        if (signboard.content.constructionPeriod) {
+            ctx.fillText(`工事期間: ${signboard.content.constructionPeriod}`, 20, y);
+            y += 25;
+        }
+        if (signboard.content.contractor) {
+            ctx.fillText(`施工会社: ${signboard.content.contractor}`, 20, y);
+            y += 25;
+        }
+        if (signboard.content.supervisor) {
+            ctx.fillText(`監督者: ${signboard.content.supervisor}`, 20, y);
+            y += 25;
+        }
+        if (signboard.content.contact) {
+            ctx.fillText(`連絡先: ${signboard.content.contact}`, 20, y);
+        }
+    }
+
+    startDrawing(e) {
+        this.isDrawing = true;
+        const rect = this.drawingCanvas.getBoundingClientRect();
+        this.lastX = e.clientX - rect.left;
+        this.lastY = e.clientY - rect.top;
+    }
+
+    draw(e) {
+        if (!this.isDrawing) return;
+
+        const rect = this.drawingCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const ctx = this.drawingCtx;
+        ctx.beginPath();
+        ctx.moveTo(this.lastX, this.lastY);
+        ctx.lineTo(x, y);
+        ctx.strokeStyle = this.drawTool === 'eraser' ? '#fff8e1' : this.penColor;
+        ctx.lineWidth = this.drawTool === 'eraser' ? this.penSize * 3 : this.penSize;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        this.lastX = x;
+        this.lastY = y;
+    }
+
+    stopDrawing() {
+        this.isDrawing = false;
+    }
+
+    setDrawTool(tool) {
+        this.drawTool = tool;
+        document.getElementById('tool-pen').classList.toggle('btn-primary', tool === 'pen');
+        document.getElementById('tool-pen').classList.toggle('btn-secondary', tool !== 'pen');
+        document.getElementById('tool-eraser').classList.toggle('btn-primary', tool === 'eraser');
+        document.getElementById('tool-eraser').classList.toggle('btn-secondary', tool !== 'eraser');
+    }
+
+    setPenSize(size) {
+        this.penSize = parseInt(size);
+    }
+
+    setPenColor(color) {
+        this.penColor = color;
+    }
+
+    clearCanvas() {
+        if (confirm('看板を初期状態に戻しますか？')) {
+            this.drawSignboardBackground(this.currentEditingSignboard);
+        }
+    }
+
+    async saveEditedSignboard() {
+        // Canvas を画像として保存（将来的にはサーバーに送信）
+        const imageData = this.drawingCanvas.toDataURL('image/png');
+
+        // 現時点では編集内容をローカルストレージに保存
+        const editedData = {
+            signboardId: this.currentEditingSignboard.id,
+            imageData: imageData,
+            timestamp: new Date().toISOString()
+        };
+
+        localStorage.setItem(`signboard_edit_${this.currentEditingSignboard.id}`, JSON.stringify(editedData));
+
+        alert('看板の編集内容を保存しました');
+        this.closeEditSignboardModal();
+    }
+
+    closeEditSignboardModal() {
+        this.closeModal('edit-signboard-modal');
+        this.currentEditingSignboard = null;
+    }
+
+    // ===================
+    // カメラオーバーレイ機能
+    // ===================
+
+    async updateCameraSignboardOverlay() {
+        const signboardId = document.getElementById('camera-signboard-select').value;
+        const videoContainer = document.querySelector('.camera-container');
+
+        // 既存のオーバーレイを削除
+        const existingOverlay = videoContainer.querySelector('.signboard-overlay');
+        if (existingOverlay) {
+            existingOverlay.remove();
+        }
+
+        if (!signboardId) return;
+
+        const signboard = this.signboards.find(s => s.id === signboardId);
+        if (!signboard) return;
+
+        // オーバーレイHTML作成
+        const overlay = document.createElement('div');
+        overlay.className = 'signboard-overlay';
+        overlay.innerHTML = `
+            <h3>【${this.escapeHtml(signboard.content.projectName || signboard.title)}】</h3>
+            <div class="content">
+                ${signboard.content.constructionPeriod ? `<div>工事期間: ${this.escapeHtml(signboard.content.constructionPeriod)}</div>` : ''}
+                ${signboard.content.contractor ? `<div>施工会社: ${this.escapeHtml(signboard.content.contractor)}</div>` : ''}
+                ${signboard.content.supervisor ? `<div>監督者: ${this.escapeHtml(signboard.content.supervisor)}</div>` : ''}
+                ${signboard.content.contact ? `<div>連絡先: ${this.escapeHtml(signboard.content.contact)}</div>` : ''}
+            </div>
+        `;
+
+        videoContainer.appendChild(overlay);
     }
 }
 
