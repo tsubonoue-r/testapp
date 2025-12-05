@@ -439,9 +439,39 @@
             <div id="photos" class="section">
                 <div class="form-group" style="margin-bottom: 16px;">
                     <label>🏗️ 案件で絞り込み</label>
-                    <select id="photo-project-filter" onchange="app.filterPhotosByProject()">
+                    <select id="photo-project-filter" onchange="app.filterPhotos()">
                         <option value="">すべての案件</option>
                     </select>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px;">
+                    <div class="form-group" style="margin: 0;">
+                        <label>📋 工程区分</label>
+                        <select id="photo-category-process-filter" onchange="app.filterPhotos()">
+                            <option value="">すべて</option>
+                            <option value="foundation">基礎</option>
+                            <option value="structure">躯体</option>
+                            <option value="finishing">仕上げ</option>
+                            <option value="completion">完成</option>
+                            <option value="inspection">検査</option>
+                            <option value="other">その他</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label>📍 撮影箇所</label>
+                        <input type="text" id="photo-category-location-filter" placeholder="箇所で検索" oninput="app.filterPhotos()">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label>🔧 工種</label>
+                        <select id="photo-category-worktype-filter" onchange="app.filterPhotos()">
+                            <option value="">すべて</option>
+                            <option value="architecture">建築</option>
+                            <option value="electrical">電気</option>
+                            <option value="plumbing">設備</option>
+                            <option value="civil">土木</option>
+                            <option value="landscape">外構</option>
+                            <option value="other">その他</option>
+                        </select>
+                    </div>
                 </div>
                 <div id="photos-list"></div>
             </div>

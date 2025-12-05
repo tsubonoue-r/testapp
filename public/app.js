@@ -412,10 +412,45 @@ class App {
     }
 
     async filterPhotosByProject() {
-        const filterSelect = document.getElementById('photo-project-filter');
-        const projectId = filterSelect.value || null;
+        await this.filterPhotos();
+    }
 
+    async filterPhotos() {
+        // 案件フィルター
+        const projectId = document.getElementById('photo-project-filter')?.value || null;
+
+        // カテゴリーフィルター
+        const categoryProcess = document.getElementById('photo-category-process-filter')?.value || '';
+        const categoryLocation = document.getElementById('photo-category-location-filter')?.value || '';
+        const categoryWorkType = document.getElementById('photo-category-worktype-filter')?.value || '';
+
+        // まず案件でフィルター（APIレベル）
         await this.loadPhotos(projectId);
+
+        // その後クライアント側でカテゴリーフィルター
+        if (categoryProcess || categoryLocation || categoryWorkType) {
+            this.photos = this.photos.filter(photo => {
+                if (!photo.category) return false;
+
+                // 工程区分フィルター
+                if (categoryProcess && photo.category.process !== categoryProcess) {
+                    return false;
+                }
+
+                // 撮影箇所フィルター（部分一致）
+                if (categoryLocation && (!photo.category.location || !photo.category.location.includes(categoryLocation))) {
+                    return false;
+                }
+
+                // 工種フィルター
+                if (categoryWorkType && photo.category.workType !== categoryWorkType) {
+                    return false;
+                }
+
+                return true;
+            });
+        }
+
         this.renderPhotos();
     }
 
