@@ -82,12 +82,13 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   });
 });
 
-// サーバー起動
-app.listen(PORT, () => {
+// サーバー起動（全てのネットワークインターフェースでリスニング）
+app.listen(PORT, '0.0.0.0', () => {
   console.log('');
   console.log('🌸 工事看板写真システム REST API');
   console.log('========================================');
   console.log(`🚀 サーバー起動: http://localhost:${PORT}`);
+  console.log(`📱 モバイルアクセス: http://192.168.106.41:${PORT}`);
   console.log(`📊 ヘルスチェック: http://localhost:${PORT}/api/health`);
   console.log('');
   console.log('📡 APIエンドポイント:');
