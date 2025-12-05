@@ -438,6 +438,10 @@
             <!-- 写真セクション -->
             <div id="photos" class="section">
                 <div class="form-group" style="margin-bottom: 16px;">
+                    <label>🔍 全文検索</label>
+                    <input type="text" id="photo-search-query" placeholder="キャプション、カテゴリー、撮影箇所で検索..." oninput="app.filterPhotos()">
+                </div>
+                <div class="form-group" style="margin-bottom: 16px;">
                     <label>🏗️ 案件で絞り込み</label>
                     <select id="photo-project-filter" onchange="app.filterPhotos()">
                         <option value="">すべての案件</option>

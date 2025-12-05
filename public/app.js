@@ -448,6 +448,9 @@ class App {
     }
 
     async filterPhotos() {
+        // 検索クエリ
+        const searchQuery = document.getElementById('photo-search-query')?.value.toLowerCase() || '';
+
         // 案件フィルター
         const projectId = document.getElementById('photo-project-filter')?.value || null;
 
@@ -459,24 +462,42 @@ class App {
         // まず案件でフィルター（APIレベル）
         await this.loadPhotos(projectId);
 
-        // その後クライアント側でカテゴリーフィルター
-        if (categoryProcess || categoryLocation || categoryWorkType) {
+        // その後クライアント側でフィルター
+        if (searchQuery || categoryProcess || categoryLocation || categoryWorkType) {
             this.photos = this.photos.filter(photo => {
-                if (!photo.category) return false;
+                // 全文検索フィルター
+                if (searchQuery) {
+                    const searchTargets = [
+                        photo.caption || '',
+                        photo.category?.process || '',
+                        photo.category?.location || '',
+                        photo.category?.workType || '',
+                        photo.filename || ''
+                    ].join(' ').toLowerCase();
 
-                // 工程区分フィルター
-                if (categoryProcess && photo.category.process !== categoryProcess) {
-                    return false;
+                    if (!searchTargets.includes(searchQuery)) {
+                        return false;
+                    }
                 }
 
-                // 撮影箇所フィルター（部分一致）
-                if (categoryLocation && (!photo.category.location || !photo.category.location.includes(categoryLocation))) {
-                    return false;
-                }
+                // カテゴリーフィルター
+                if (categoryProcess || categoryLocation || categoryWorkType) {
+                    if (!photo.category) return false;
 
-                // 工種フィルター
-                if (categoryWorkType && photo.category.workType !== categoryWorkType) {
-                    return false;
+                    // 工程区分フィルター
+                    if (categoryProcess && photo.category.process !== categoryProcess) {
+                        return false;
+                    }
+
+                    // 撮影箇所フィルター（部分一致）
+                    if (categoryLocation && (!photo.category.location || !photo.category.location.includes(categoryLocation))) {
+                        return false;
+                    }
+
+                    // 工種フィルター
+                    if (categoryWorkType && photo.category.workType !== categoryWorkType) {
+                        return false;
+                    }
                 }
 
                 return true;
