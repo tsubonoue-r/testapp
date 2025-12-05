@@ -308,6 +308,83 @@ class App {
         this.renderPhotos();
     }
 
+    // 案件エクスポート
+    exportProjects(format) {
+        if (this.projects.length === 0) {
+            alert('エクスポートする案件がありません');
+            return;
+        }
+
+        const timestamp = new Date().toISOString().slice(0, 10);
+        const filename = `projects_${timestamp}.${format}`;
+
+        if (format === 'json') {
+            const json = JSON.stringify(this.projects, null, 2);
+            this.downloadFile(json, filename, 'application/json');
+        } else if (format === 'csv') {
+            const headers = ['ID', '案件名', '場所', '開始日', '終了日', '状態', '説明', 'アーカイブ'];
+            const rows = this.projects.map(p => [
+                p.id,
+                p.name,
+                p.location,
+                p.startDate,
+                p.endDate || '',
+                p.status,
+                p.description || '',
+                p.archived ? 'はい' : 'いいえ'
+            ]);
+            const csv = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+            this.downloadFile(csv, filename, 'text/csv');
+        }
+
+        alert(`${format.toUpperCase()}ファイルをダウンロードしました`);
+    }
+
+    // 写真エクスポート
+    exportPhotos(format) {
+        if (this.photos.length === 0) {
+            alert('エクスポートする写真がありません');
+            return;
+        }
+
+        const timestamp = new Date().toISOString().slice(0, 10);
+        const filename = `photos_${timestamp}.${format}`;
+
+        if (format === 'json') {
+            const json = JSON.stringify(this.photos, null, 2);
+            this.downloadFile(json, filename, 'application/json');
+        } else if (format === 'csv') {
+            const headers = ['ID', 'キャプション', '案件ID', 'ファイル名', '撮影日時', '工程', '撮影箇所', '工種'];
+            const rows = this.photos.map(p => [
+                p.id,
+                p.caption || '',
+                p.projectId,
+                p.filename,
+                p.takenAt,
+                p.category?.process || '',
+                p.category?.location || '',
+                p.category?.workType || ''
+            ]);
+            const csv = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+            this.downloadFile(csv, filename, 'text/csv');
+        }
+
+        alert(`${format.toUpperCase()}ファイルをダウンロードしました`);
+    }
+
+    // ファイルダウンロードヘルパー
+    downloadFile(content, filename, mimeType) {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
     // ===================
     // 工事看板管理
     // ===================

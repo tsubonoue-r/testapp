@@ -432,7 +432,11 @@
                     </label>
                 </div>
                 <div id="projects-list"></div>
-                <button class="btn btn-primary" onclick="app.showCreateProjectModal()">➕ 新しい案件を作成</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-primary" onclick="app.showCreateProjectModal()" style="flex: 1;">➕ 新しい案件を作成</button>
+                    <button class="btn btn-secondary" onclick="app.exportProjects('json')" style="flex: 1;">📥 JSON</button>
+                    <button class="btn btn-secondary" onclick="app.exportProjects('csv')" style="flex: 1;">📥 CSV</button>
+                </div>
             </div>
 
             <!-- 看板セクション -->
@@ -505,9 +509,11 @@
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-                    <button class="btn btn-primary" onclick="app.exportPhotosToPDF()" style="flex: 1;">📄 PDF出力</button>
-                    <button class="btn btn-secondary" onclick="app.toggleSelectionMode()" id="selection-mode-btn" style="flex: 1;">✓ 選択モード</button>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px;">
+                    <button class="btn btn-primary" onclick="app.exportPhotosToPDF()">📄 PDF</button>
+                    <button class="btn btn-secondary" onclick="app.exportPhotos('json')">📥 JSON</button>
+                    <button class="btn btn-secondary" onclick="app.exportPhotos('csv')">📥 CSV</button>
+                    <button class="btn btn-secondary" onclick="app.toggleSelectionMode()" id="selection-mode-btn">✓ 選択</button>
                 </div>
 
                 <!-- 選択ツールバー（選択モード時のみ表示） -->
