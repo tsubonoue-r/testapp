@@ -17,6 +17,11 @@ export class PhotoService {
     filepath: string;
     thumbnailPath?: string;
     caption?: string;
+    category?: {
+      process?: string;
+      location?: string;
+      workType?: string;
+    };
     location?: PhotoLocation;
     metadata: PhotoMetadata;
     takenAt?: Date;

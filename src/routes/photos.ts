@@ -88,10 +88,20 @@ router.post('/upload', upload.single('photo'), (req: Request, res: Response) => 
       return res.status(400).json({ success: false, error: { code: 'NO_FILE', message: 'ファイルがアップロードされていません' } });
     }
 
-    const { projectId, signboardId, caption } = req.body;
+    const { projectId, signboardId, caption, category } = req.body;
 
     if (!projectId) {
       return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'projectIdは必須です' } });
+    }
+
+    // カテゴリーデータをパース（JSONで送信されている場合）
+    let parsedCategory;
+    if (category) {
+      try {
+        parsedCategory = typeof category === 'string' ? JSON.parse(category) : category;
+      } catch (e) {
+        parsedCategory = undefined;
+      }
     }
 
     // 画像メタデータを取得（実際の実装では画像ライブラリを使用）
@@ -101,6 +111,7 @@ router.post('/upload', upload.single('photo'), (req: Request, res: Response) => 
       filename: req.file.originalname,
       filepath: `/uploads/${req.file.filename}`,
       caption,
+      category: parsedCategory,
       metadata: {
         width: 1920,  // 実際はsharp等で取得
         height: 1080,

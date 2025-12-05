@@ -15,6 +15,11 @@ export class PhotoModel {
     filepath: string;
     thumbnailPath?: string;
     caption?: string;
+    category?: {
+      process?: string;
+      location?: string;
+      workType?: string;
+    };
     location?: PhotoLocation;
     metadata: PhotoMetadata;
     takenAt?: Date;
@@ -29,6 +34,7 @@ export class PhotoModel {
       filepath: data.filepath,
       thumbnailPath: data.thumbnailPath,
       caption: data.caption,
+      category: data.category,
       location: data.location,
       metadata: data.metadata,
       takenAt: data.takenAt || now,

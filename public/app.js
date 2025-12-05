@@ -373,6 +373,10 @@ class App {
 
         container.innerHTML = this.photos.map(photo => {
             const project = this.projects.find(p => p.id === photo.projectId);
+
+            // カテゴリーバッジを生成
+            const categoryBadges = this.renderCategoryBadges(photo.category);
+
             return `
                 <div class="card">
                     <h3>${photo.caption || '写真'}</h3>
@@ -380,6 +384,7 @@ class App {
                         <span>🏗️ ${project ? this.escapeHtml(project.name) : '不明な案件'}</span>
                         <span>📅 ${this.formatDate(photo.takenAt)}</span>
                     </div>
+                    ${categoryBadges ? `<div style="margin-top: 8px;">${categoryBadges}</div>` : ''}
                     <div style="aspect-ratio: 16/9; background: #f5f5f5; border-radius: 8px; margin-top: 12px; overflow: hidden;">
                         <img src="/uploads/${photo.filename}" alt="${photo.caption || ''}" style="width: 100%; height: 100%; object-fit: cover;">
                     </div>
@@ -649,6 +654,46 @@ class App {
             cancelled: '中止',
         };
         return labels[status] || status;
+    }
+
+    // ===================
+    // カテゴリー表示
+    // ===================
+
+    renderCategoryBadges(category) {
+        if (!category) return '';
+
+        const badges = [];
+
+        if (category.process) {
+            const processLabels = {
+                foundation: '基礎',
+                structure: '躯体',
+                finishing: '仕上げ',
+                completion: '完成',
+                inspection: '検査',
+                other: 'その他',
+            };
+            badges.push(`<span class="badge" style="background: #e3f2fd; color: #1976d2;">📋 ${processLabels[category.process] || category.process}</span>`);
+        }
+
+        if (category.location) {
+            badges.push(`<span class="badge" style="background: #f3e5f5; color: #7b1fa2;">📍 ${this.escapeHtml(category.location)}</span>`);
+        }
+
+        if (category.workType) {
+            const workTypeLabels = {
+                architecture: '建築',
+                electrical: '電気',
+                plumbing: '設備',
+                civil: '土木',
+                landscape: '外構',
+                other: 'その他',
+            };
+            badges.push(`<span class="badge" style="background: #fff3e0; color: #f57c00;">🔧 ${workTypeLabels[category.workType] || category.workType}</span>`);
+        }
+
+        return badges.join(' ');
     }
 
     // ===================
