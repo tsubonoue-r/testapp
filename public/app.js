@@ -342,19 +342,29 @@ class App {
     // 写真管理
     // ===================
 
-    async loadPhotos() {
-        const response = await this.api('/photos');
+    async loadPhotos(projectId = null) {
+        const endpoint = projectId ? `/photos?projectId=${projectId}` : '/photos';
+        const response = await this.api(endpoint);
         this.photos = response.data?.items || [];
     }
 
     renderPhotos() {
         const container = document.getElementById('photos-list');
 
+        // フィルタードロップダウンを更新
+        this.updatePhotoProjectFilter();
+
         if (this.photos.length === 0) {
+            const filterSelect = document.getElementById('photo-project-filter');
+            const selectedProjectId = filterSelect?.value;
+            const emptyMessage = selectedProjectId
+                ? 'この案件の写真がありません'
+                : 'まだ写真がありません';
+
             container.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">📷</div>
-                    <p>まだ写真がありません</p>
+                    <p>${emptyMessage}</p>
                     <p style="font-size: 13px; margin-top: 8px;">右下の📸ボタンから撮影してください</p>
                 </div>
             `;
@@ -379,6 +389,29 @@ class App {
                 </div>
             `;
         }).join('');
+    }
+
+    updatePhotoProjectFilter() {
+        const filterSelect = document.getElementById('photo-project-filter');
+        if (!filterSelect) return;
+
+        const currentValue = filterSelect.value;
+        filterSelect.innerHTML = '<option value="">すべての案件</option>' + this.projects.map(p =>
+            `<option value="${p.id}">${this.escapeHtml(p.name)}</option>`
+        ).join('');
+
+        // 前の選択を保持
+        if (currentValue) {
+            filterSelect.value = currentValue;
+        }
+    }
+
+    async filterPhotosByProject() {
+        const filterSelect = document.getElementById('photo-project-filter');
+        const projectId = filterSelect.value || null;
+
+        await this.loadPhotos(projectId);
+        this.renderPhotos();
     }
 
     // ===================

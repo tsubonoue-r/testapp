@@ -437,6 +437,12 @@
 
             <!-- 写真セクション -->
             <div id="photos" class="section">
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label>🏗️ 案件で絞り込み</label>
+                    <select id="photo-project-filter" onchange="app.filterPhotosByProject()">
+                        <option value="">すべての案件</option>
+                    </select>
+                </div>
                 <div id="photos-list"></div>
             </div>
         </div>
