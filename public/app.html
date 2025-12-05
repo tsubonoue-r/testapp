@@ -484,7 +484,7 @@
                     </div>
                 </div>
 
-                <!-- ソート設定 -->
+                <!-- ソート設定 & 表示切り替え -->
                 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 16px;">
                     <div class="form-group" style="margin: 0;">
                         <label>📊 ソート基準</label>
@@ -494,6 +494,13 @@
                             <option value="category">カテゴリー順</option>
                             <option value="filename-asc">ファイル名（昇順）</option>
                             <option value="filename-desc">ファイル名（降順）</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label>👁️ 表示形式</label>
+                        <select id="photo-view-mode" onchange="app.changeViewMode()">
+                            <option value="grid">グリッド</option>
+                            <option value="list">リスト</option>
                         </select>
                     </div>
                 </div>

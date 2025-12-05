@@ -41,6 +41,9 @@ class App {
         // 案件アーカイブ機能用
         this.showArchivedProjects = false;
 
+        // 写真表示モード
+        this.photoViewMode = 'grid'; // 'grid' or 'list'
+
         this.init();
     }
 
@@ -299,6 +302,12 @@ class App {
         }
     }
 
+    // 写真表示モード切り替え
+    changeViewMode() {
+        this.photoViewMode = document.getElementById('photo-view-mode').value;
+        this.renderPhotos();
+    }
+
     // ===================
     // 工事看板管理
     // ===================
@@ -426,43 +435,93 @@ class App {
             return;
         }
 
-        container.innerHTML = this.photos.map(photo => {
-            const project = this.projects.find(p => p.id === photo.projectId);
+        if (this.photoViewMode === 'list') {
+            // リスト表示
+            container.innerHTML = `
+                <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden;">
+                    <thead>
+                        <tr style="background: #f5f5f5; border-bottom: 2px solid #ddd;">
+                            ${this.selectionMode ? '<th style="padding: 12px; text-align: left; width: 40px;"></th>' : ''}
+                            <th style="padding: 12px; text-align: left; width: 80px;">サムネイル</th>
+                            <th style="padding: 12px; text-align: left;">キャプション</th>
+                            <th style="padding: 12px; text-align: left;">案件</th>
+                            <th style="padding: 12px; text-align: left;">カテゴリー</th>
+                            <th style="padding: 12px; text-align: left;">撮影日時</th>
+                            ${!this.selectionMode ? '<th style="padding: 12px; text-align: left; width: 120px;">操作</th>' : ''}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${this.photos.map(photo => {
+                            const project = this.projects.find(p => p.id === photo.projectId);
+                            const categoryBadges = this.renderCategoryBadges(photo.category);
+                            const isSelected = this.selectedPhotos.has(photo.id);
 
-            // カテゴリーバッジを生成
-            const categoryBadges = this.renderCategoryBadges(photo.category);
-
-            const isSelected = this.selectedPhotos.has(photo.id);
-            const checkboxHtml = this.selectionMode ? `
-                <div style="position: absolute; top: 8px; left: 8px; z-index: 10;">
-                    <input type="checkbox"
-                           ${isSelected ? 'checked' : ''}
-                           onchange="app.togglePhotoSelection('${photo.id}')"
-                           style="width: 24px; height: 24px; cursor: pointer;">
-                </div>
-            ` : '';
-
-            return `
-                <div class="card" style="position: relative;">
-                    ${checkboxHtml}
-                    <h3>${photo.caption || '写真'}</h3>
-                    <div class="card-meta">
-                        <span>🏗️ ${project ? this.escapeHtml(project.name) : '不明な案件'}</span>
-                        <span>📅 ${this.formatDate(photo.takenAt)}</span>
-                    </div>
-                    ${categoryBadges ? `<div style="margin-top: 8px;">${categoryBadges}</div>` : ''}
-                    <div style="aspect-ratio: 16/9; background: #f5f5f5; border-radius: 8px; margin-top: 12px; overflow: hidden;">
-                        <img src="/uploads/${photo.filename}" alt="${photo.caption || ''}" style="width: 100%; height: 100%; object-fit: cover;" id="photo-img-${photo.id}">
-                    </div>
-                    <p style="font-size: 13px; color: #666; margin-top: 8px;">
-                        ${photo.filename} • ${photo.metadata.width}x${photo.metadata.height} • ${this.formatFileSize(photo.metadata.size)}
-                    </p>
-                    <div class="card-actions" style="${this.selectionMode ? 'display: none;' : ''}">
-                        <button class="btn btn-primary" onclick="app.editPhoto('${photo.id}')">✏️ 注釈を追加</button>
-                    </div>
-                </div>
+                            return `
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    ${this.selectionMode ? `
+                                        <td style="padding: 12px;">
+                                            <input type="checkbox"
+                                                   ${isSelected ? 'checked' : ''}
+                                                   onchange="app.togglePhotoSelection('${photo.id}')"
+                                                   style="width: 20px; height: 20px; cursor: pointer;">
+                                        </td>
+                                    ` : ''}
+                                    <td style="padding: 12px;">
+                                        <img src="/uploads/${photo.filename}" alt="${photo.caption || ''}"
+                                             style="width: 60px; height: 40px; object-fit: cover; border-radius: 4px;">
+                                    </td>
+                                    <td style="padding: 12px; font-weight: 600;">${photo.caption || '写真'}</td>
+                                    <td style="padding: 12px;">${project ? this.escapeHtml(project.name) : '不明な案件'}</td>
+                                    <td style="padding: 12px;">${categoryBadges || '-'}</td>
+                                    <td style="padding: 12px;">${this.formatDate(photo.takenAt)}</td>
+                                    ${!this.selectionMode ? `
+                                        <td style="padding: 12px;">
+                                            <button class="btn btn-primary" onclick="app.editPhoto('${photo.id}')" style="padding: 6px 12px; font-size: 12px;">✏️ 編集</button>
+                                        </td>
+                                    ` : ''}
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
             `;
-        }).join('');
+        } else {
+            // グリッド表示
+            container.innerHTML = this.photos.map(photo => {
+                const project = this.projects.find(p => p.id === photo.projectId);
+                const categoryBadges = this.renderCategoryBadges(photo.category);
+                const isSelected = this.selectedPhotos.has(photo.id);
+                const checkboxHtml = this.selectionMode ? `
+                    <div style="position: absolute; top: 8px; left: 8px; z-index: 10;">
+                        <input type="checkbox"
+                               ${isSelected ? 'checked' : ''}
+                               onchange="app.togglePhotoSelection('${photo.id}')"
+                               style="width: 24px; height: 24px; cursor: pointer;">
+                    </div>
+                ` : '';
+
+                return `
+                    <div class="card" style="position: relative;">
+                        ${checkboxHtml}
+                        <h3>${photo.caption || '写真'}</h3>
+                        <div class="card-meta">
+                            <span>🏗️ ${project ? this.escapeHtml(project.name) : '不明な案件'}</span>
+                            <span>📅 ${this.formatDate(photo.takenAt)}</span>
+                        </div>
+                        ${categoryBadges ? `<div style="margin-top: 8px;">${categoryBadges}</div>` : ''}
+                        <div style="aspect-ratio: 16/9; background: #f5f5f5; border-radius: 8px; margin-top: 12px; overflow: hidden;">
+                            <img src="/uploads/${photo.filename}" alt="${photo.caption || ''}" style="width: 100%; height: 100%; object-fit: cover;" id="photo-img-${photo.id}">
+                        </div>
+                        <p style="font-size: 13px; color: #666; margin-top: 8px;">
+                            ${photo.filename} • ${photo.metadata.width}x${photo.metadata.height} • ${this.formatFileSize(photo.metadata.size)}
+                        </p>
+                        <div class="card-actions" style="${this.selectionMode ? 'display: none;' : ''}">
+                            <button class="btn btn-primary" onclick="app.editPhoto('${photo.id}')">✏️ 注釈を追加</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
     }
 
     updatePhotoProjectFilter() {
