@@ -63,6 +63,39 @@ export enum SignboardTemplate {
 }
 
 /**
+ * 写真カテゴリー種別
+ */
+export enum PhotoCategoryType {
+  PROCESS = 'process', // 工程別
+  LOCATION = 'location', // 撮影箇所別
+  WORK_TYPE = 'work_type', // 工種別
+}
+
+/**
+ * 写真カテゴリー（工程別）
+ */
+export enum PhotoProcessCategory {
+  FOUNDATION = 'foundation', // 基礎
+  STRUCTURE = 'structure', // 躯体
+  FINISHING = 'finishing', // 仕上げ
+  COMPLETION = 'completion', // 完成
+  INSPECTION = 'inspection', // 検査
+  OTHER = 'other', // その他
+}
+
+/**
+ * 写真カテゴリー（工種別）
+ */
+export enum PhotoWorkTypeCategory {
+  ARCHITECTURE = 'architecture', // 建築
+  ELECTRICAL = 'electrical', // 電気
+  PLUMBING = 'plumbing', // 設備
+  CIVIL = 'civil', // 土木
+  LANDSCAPE = 'landscape', // 外構
+  OTHER = 'other', // その他
+}
+
+/**
  * 写真
  */
 export interface Photo {
@@ -73,6 +106,11 @@ export interface Photo {
   filepath: string;
   thumbnailPath?: string;
   caption?: string;
+  category?: {
+    process?: PhotoProcessCategory;
+    location?: string; // 自由入力
+    workType?: PhotoWorkTypeCategory;
+  };
   location?: PhotoLocation;
   metadata: PhotoMetadata;
   takenAt: Date;

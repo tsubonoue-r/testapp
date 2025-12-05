@@ -474,6 +474,16 @@ class App {
         const caption = document.getElementById('camera-caption').value;
         const signboardId = document.getElementById('camera-signboard-select').value;
 
+        // カテゴリー情報を取得
+        const categoryProcess = document.getElementById('camera-category-process').value;
+        const categoryLocation = document.getElementById('camera-category-location').value;
+        const categoryWorkType = document.getElementById('camera-category-worktype').value;
+
+        const category = {};
+        if (categoryProcess) category.process = categoryProcess;
+        if (categoryLocation) category.location = categoryLocation;
+        if (categoryWorkType) category.workType = categoryWorkType;
+
         // キャンバスにビデオフレームを描画
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
@@ -487,7 +497,7 @@ class App {
 
         // Blobに変換
         canvas.toBlob(async (blob) => {
-            await this.uploadPhoto(blob, projectId, caption);
+            await this.uploadPhoto(blob, projectId, caption, signboardId, category);
         }, 'image/jpeg', 0.9);
     }
 
@@ -544,12 +554,18 @@ class App {
         }
     }
 
-    async uploadPhoto(blob, projectId, caption) {
+    async uploadPhoto(blob, projectId, caption, signboardId, category) {
         const formData = new FormData();
         formData.append('photo', blob, `photo-${Date.now()}.jpg`);
         formData.append('projectId', projectId);
         if (caption) {
             formData.append('caption', caption);
+        }
+        if (signboardId) {
+            formData.append('signboardId', signboardId);
+        }
+        if (category && Object.keys(category).length > 0) {
+            formData.append('category', JSON.stringify(category));
         }
 
         try {
