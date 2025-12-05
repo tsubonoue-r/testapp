@@ -65,6 +65,7 @@ class App {
             await this.loadPhotos();
             console.log('✅ 写真データ読み込み完了');
 
+            this.renderDashboard();
             this.renderProjects();
             this.renderSignboards();
             this.renderPhotos();
@@ -76,6 +77,7 @@ class App {
             this.projects = [];
             this.signboards = [];
             this.photos = [];
+            this.renderDashboard();
             this.renderProjects();
             this.renderSignboards();
             this.renderPhotos();
@@ -383,6 +385,122 @@ class App {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+    }
+
+    // ===================
+    // ダッシュボード
+    // ===================
+
+    renderDashboard() {
+        // サマリー統計
+        document.getElementById('stat-projects').textContent = this.projects.length;
+        document.getElementById('stat-photos').textContent = this.photos.length;
+        document.getElementById('stat-signboards').textContent = this.signboards.length;
+
+        // 案件別写真数
+        const projectPhotoCount = {};
+        this.photos.forEach(photo => {
+            projectPhotoCount[photo.projectId] = (projectPhotoCount[photo.projectId] || 0) + 1;
+        });
+
+        const projectStatsHtml = this.projects
+            .map(project => {
+                const count = projectPhotoCount[project.id] || 0;
+                const percentage = this.photos.length > 0 ? (count / this.photos.length * 100).toFixed(1) : 0;
+                return `
+                    <div style="margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span style="font-weight: 600;">${this.escapeHtml(project.name)}</span>
+                            <span style="color: #667eea; font-weight: 600;">${count}枚 (${percentage}%)</span>
+                        </div>
+                        <div style="background: #f5f5f5; height: 8px; border-radius: 4px; overflow: hidden;">
+                            <div style="background: linear-gradient(90deg, #667eea, #764ba2); height: 100%; width: ${percentage}%; transition: width 0.3s;"></div>
+                        </div>
+                    </div>
+                `;
+            })
+            .join('') || '<p style="color: #999;">データがありません</p>';
+        document.getElementById('project-stats').innerHTML = projectStatsHtml;
+
+        // 工程区分別集計
+        const processCount = {};
+        this.photos.forEach(photo => {
+            const process = photo.category?.process || '未分類';
+            processCount[process] = (processCount[process] || 0) + 1;
+        });
+
+        const processLabels = {
+            foundation: '基礎',
+            structure: '躯体',
+            finishing: '仕上げ',
+            completion: '完成',
+            inspection: '検査',
+            other: 'その他',
+            '未分類': '未分類'
+        };
+
+        const processStatsHtml = Object.entries(processCount)
+            .sort((a, b) => b[1] - a[1])
+            .map(([process, count]) => `
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee;">
+                    <span>${processLabels[process] || process}</span>
+                    <span style="font-weight: 600; color: #667eea;">${count}枚</span>
+                </div>
+            `)
+            .join('') || '<p style="color: #999;">データがありません</p>';
+        document.getElementById('category-process-stats').innerHTML = processStatsHtml;
+
+        // 工種別集計
+        const workTypeCount = {};
+        this.photos.forEach(photo => {
+            const workType = photo.category?.workType || '未分類';
+            workTypeCount[workType] = (workTypeCount[workType] || 0) + 1;
+        });
+
+        const workTypeLabels = {
+            architecture: '建築',
+            electrical: '電気',
+            plumbing: '設備',
+            civil: '土木',
+            landscape: '外構',
+            other: 'その他',
+            '未分類': '未分類'
+        };
+
+        const workTypeStatsHtml = Object.entries(workTypeCount)
+            .sort((a, b) => b[1] - a[1])
+            .map(([workType, count]) => `
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee;">
+                    <span>${workTypeLabels[workType] || workType}</span>
+                    <span style="font-weight: 600; color: #667eea;">${count}枚</span>
+                </div>
+            `)
+            .join('') || '<p style="color: #999;">データがありません</p>';
+        document.getElementById('category-worktype-stats').innerHTML = workTypeStatsHtml;
+
+        // 最近の活動
+        const recentPhotos = [...this.photos]
+            .sort((a, b) => new Date(b.takenAt) - new Date(a.takenAt))
+            .slice(0, 5);
+
+        const recentActivityHtml = recentPhotos
+            .map(photo => {
+                const project = this.projects.find(p => p.id === photo.projectId);
+                return `
+                    <div style="display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #eee;">
+                        <img src="/uploads/${photo.filename}" alt="${photo.caption || ''}"
+                             style="width: 60px; height: 40px; object-fit: cover; border-radius: 4px;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600;">${photo.caption || '写真'}</div>
+                            <div style="font-size: 12px; color: #666; margin-top: 4px;">
+                                ${project ? this.escapeHtml(project.name) : '不明な案件'} • ${this.formatDate(photo.takenAt)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            })
+            .join('') || '<p style="color: #999;">データがありません</p>';
+        document.getElementById('recent-activity').innerHTML = recentActivityHtml;
     }
 
     // ===================

@@ -417,14 +417,60 @@
         </header>
 
         <div class="tabs">
-            <button class="tab active" data-tab="projects">案件</button>
+            <button class="tab active" data-tab="dashboard">📊 ダッシュボード</button>
+            <button class="tab" data-tab="projects">案件</button>
             <button class="tab" data-tab="signboards">看板</button>
             <button class="tab" data-tab="photos">写真</button>
         </div>
 
         <div class="content">
+            <!-- ダッシュボードセクション -->
+            <div id="dashboard" class="section active">
+                <h2 style="margin-bottom: 20px;">📊 統計ダッシュボード</h2>
+
+                <!-- サマリーカード -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                    <div class="card" style="text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        <h3 style="font-size: 32px; margin-bottom: 8px;" id="stat-projects">0</h3>
+                        <p style="opacity: 0.9;">案件数</p>
+                    </div>
+                    <div class="card" style="text-align: center; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                        <h3 style="font-size: 32px; margin-bottom: 8px;" id="stat-photos">0</h3>
+                        <p style="opacity: 0.9;">写真総数</p>
+                    </div>
+                    <div class="card" style="text-align: center; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+                        <h3 style="font-size: 32px; margin-bottom: 8px;" id="stat-signboards">0</h3>
+                        <p style="opacity: 0.9;">工事看板数</p>
+                    </div>
+                </div>
+
+                <!-- 案件別写真数 -->
+                <div class="card">
+                    <h3>📊 案件別写真数</h3>
+                    <div id="project-stats" style="margin-top: 16px;"></div>
+                </div>
+
+                <!-- カテゴリー別集計 -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 16px;">
+                    <div class="card">
+                        <h3>🏗️ 工程区分別</h3>
+                        <div id="category-process-stats" style="margin-top: 16px;"></div>
+                    </div>
+                    <div class="card">
+                        <h3>🔧 工種別</h3>
+                        <div id="category-worktype-stats" style="margin-top: 16px;"></div>
+                    </div>
+                </div>
+
+                <!-- 最近の活動 -->
+                <div class="card" style="margin-top: 16px;">
+                    <h3>📅 最近の活動</h3>
+                    <div id="recent-activity" style="margin-top: 16px;"></div>
+                </div>
+            </div>
+
             <!-- 案件セクション -->
-            <div id="projects" class="section active">
+            <div id="projects" class="section">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                         <input type="checkbox" id="show-archived-projects" onchange="app.toggleArchivedProjects()" style="width: 20px; height: 20px;">
