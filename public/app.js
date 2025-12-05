@@ -20,6 +20,20 @@ class App {
         this.penColor = '#000000';
         this.lastX = 0;
         this.lastY = 0;
+
+        // 写真注釈機能用
+        this.currentEditingPhoto = null;
+        this.annotationCanvas = null;
+        this.annotationCtx = null;
+        this.annotationTool = 'pen';
+        this.annotationLineWidth = 3;
+        this.annotationColor = '#ff0000';
+        this.isAnnotating = false;
+        this.annotationStartX = 0;
+        this.annotationStartY = 0;
+        this.annotationTempImage = null;
+        this.annotations = [];
+
         this.init();
     }
 
@@ -386,11 +400,14 @@ class App {
                     </div>
                     ${categoryBadges ? `<div style="margin-top: 8px;">${categoryBadges}</div>` : ''}
                     <div style="aspect-ratio: 16/9; background: #f5f5f5; border-radius: 8px; margin-top: 12px; overflow: hidden;">
-                        <img src="/uploads/${photo.filename}" alt="${photo.caption || ''}" style="width: 100%; height: 100%; object-fit: cover;">
+                        <img src="/uploads/${photo.filename}" alt="${photo.caption || ''}" style="width: 100%; height: 100%; object-fit: cover;" id="photo-img-${photo.id}">
                     </div>
                     <p style="font-size: 13px; color: #666; margin-top: 8px;">
                         ${photo.filename} • ${photo.metadata.width}x${photo.metadata.height} • ${this.formatFileSize(photo.metadata.size)}
                     </p>
+                    <div class="card-actions">
+                        <button class="btn btn-primary" onclick="app.editPhoto('${photo.id}')">✏️ 注釈を追加</button>
+                    </div>
                 </div>
             `;
         }).join('');
@@ -937,6 +954,397 @@ class App {
         `;
 
         videoContainer.appendChild(overlay);
+    }
+
+    // ===================
+    // 写真注釈機能
+    // ===================
+
+    async editPhoto(photoId) {
+        const photo = this.photos.find(p => p.id === photoId);
+        if (!photo) {
+            console.error('写真が見つかりません:', photoId);
+            return;
+        }
+
+        this.currentEditingPhoto = photo;
+        this.annotations = [];
+
+        // モーダルを開く
+        this.openModal('edit-photo-modal');
+
+        // 画像読み込み完了後にCanvasを初期化
+        const img = document.getElementById(`photo-img-${photoId}`);
+        if (img.complete) {
+            this.initAnnotationCanvas(img);
+        } else {
+            img.onload = () => this.initAnnotationCanvas(img);
+        }
+    }
+
+    initAnnotationCanvas(sourceImage) {
+        this.annotationCanvas = document.getElementById('annotation-canvas');
+        this.annotationCtx = this.annotationCanvas.getContext('2d');
+
+        const container = this.annotationCanvas.parentElement;
+
+        // Canvasサイズを設定
+        const maxWidth = container.clientWidth;
+        const aspectRatio = sourceImage.naturalHeight / sourceImage.naturalWidth;
+        this.annotationCanvas.width = maxWidth;
+        this.annotationCanvas.height = maxWidth * aspectRatio;
+
+        // 元画像を描画
+        this.annotationCtx.drawImage(
+            sourceImage,
+            0, 0,
+            this.annotationCanvas.width,
+            this.annotationCanvas.height
+        );
+
+        // 既存の注釈があれば復元
+        this.restoreAnnotations();
+
+        // イベントリスナーを設定
+        this.setupAnnotationEvents();
+
+        // デフォルトツールを選択状態にする
+        this.setAnnotationTool('pen');
+    }
+
+    setupAnnotationEvents() {
+        // マウスイベント
+        this.annotationCanvas.onmousedown = (e) => this.startAnnotating(e);
+        this.annotationCanvas.onmousemove = (e) => this.annotate(e);
+        this.annotationCanvas.onmouseup = () => this.stopAnnotating();
+        this.annotationCanvas.onmouseleave = () => this.stopAnnotating();
+
+        // タッチイベント
+        this.annotationCanvas.ontouchstart = (e) => {
+            e.preventDefault();
+            this.startAnnotating(e.touches[0]);
+        };
+        this.annotationCanvas.ontouchmove = (e) => {
+            e.preventDefault();
+            this.annotate(e.touches[0]);
+        };
+        this.annotationCanvas.ontouchend = () => this.stopAnnotating();
+    }
+
+    setAnnotationTool(tool) {
+        this.annotationTool = tool;
+
+        // ツールボタンのハイライト更新
+        ['pen', 'arrow', 'rectangle', 'circle', 'text', 'eraser'].forEach(t => {
+            const btn = document.getElementById(`annotation-tool-${t}`);
+            if (btn) {
+                if (t === tool) {
+                    btn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                    btn.style.color = 'white';
+                } else {
+                    btn.style.background = '';
+                    btn.style.color = '';
+                }
+            }
+        });
+    }
+
+    setAnnotationLineWidth(width) {
+        this.annotationLineWidth = parseInt(width);
+    }
+
+    setAnnotationColor(color) {
+        this.annotationColor = color;
+    }
+
+    getCanvasPosition(e) {
+        const rect = this.annotationCanvas.getBoundingClientRect();
+        const scaleX = this.annotationCanvas.width / rect.width;
+        const scaleY = this.annotationCanvas.height / rect.height;
+
+        return {
+            x: (e.clientX - rect.left) * scaleX,
+            y: (e.clientY - rect.top) * scaleY
+        };
+    }
+
+    startAnnotating(e) {
+        this.isAnnotating = true;
+        const pos = this.getCanvasPosition(e);
+        this.annotationStartX = pos.x;
+        this.annotationStartY = pos.y;
+
+        // テキストツールの場合は入力ダイアログを表示
+        if (this.annotationTool === 'text') {
+            this.stopAnnotating();
+            const text = prompt('追加するテキストを入力してください:');
+            if (text) {
+                this.addText(text, this.annotationStartX, this.annotationStartY);
+            }
+            return;
+        }
+
+        // 図形・矢印ツールの場合は現在の画像を保存
+        if (['arrow', 'rectangle', 'circle'].includes(this.annotationTool)) {
+            this.annotationTempImage = this.annotationCtx.getImageData(
+                0, 0,
+                this.annotationCanvas.width,
+                this.annotationCanvas.height
+            );
+        }
+
+        // ペン・消しゴムツールの場合は描画開始
+        if (this.annotationTool === 'pen' || this.annotationTool === 'eraser') {
+            this.annotationCtx.beginPath();
+            this.annotationCtx.moveTo(pos.x, pos.y);
+        }
+    }
+
+    annotate(e) {
+        if (!this.isAnnotating) return;
+
+        const pos = this.getCanvasPosition(e);
+
+        if (this.annotationTool === 'pen') {
+            // ペンで描画
+            this.annotationCtx.strokeStyle = this.annotationColor;
+            this.annotationCtx.lineWidth = this.annotationLineWidth;
+            this.annotationCtx.lineCap = 'round';
+            this.annotationCtx.lineJoin = 'round';
+            this.annotationCtx.lineTo(pos.x, pos.y);
+            this.annotationCtx.stroke();
+
+        } else if (this.annotationTool === 'eraser') {
+            // 消しゴム
+            this.annotationCtx.globalCompositeOperation = 'destination-out';
+            this.annotationCtx.lineWidth = this.annotationLineWidth * 3;
+            this.annotationCtx.lineCap = 'round';
+            this.annotationCtx.lineTo(pos.x, pos.y);
+            this.annotationCtx.stroke();
+            this.annotationCtx.globalCompositeOperation = 'source-over';
+
+        } else if (['arrow', 'rectangle', 'circle'].includes(this.annotationTool)) {
+            // 図形・矢印のプレビュー
+            if (this.annotationTempImage) {
+                // 一時保存した画像を復元
+                this.annotationCtx.putImageData(this.annotationTempImage, 0, 0);
+
+                // 現在位置まで図形を描画
+                this.annotationCtx.strokeStyle = this.annotationColor;
+                this.annotationCtx.fillStyle = this.annotationColor;
+                this.annotationCtx.lineWidth = this.annotationLineWidth;
+
+                if (this.annotationTool === 'arrow') {
+                    this.drawArrow(
+                        this.annotationStartX,
+                        this.annotationStartY,
+                        pos.x,
+                        pos.y
+                    );
+                } else if (this.annotationTool === 'rectangle') {
+                    this.annotationCtx.strokeRect(
+                        this.annotationStartX,
+                        this.annotationStartY,
+                        pos.x - this.annotationStartX,
+                        pos.y - this.annotationStartY
+                    );
+                } else if (this.annotationTool === 'circle') {
+                    const radius = Math.sqrt(
+                        Math.pow(pos.x - this.annotationStartX, 2) +
+                        Math.pow(pos.y - this.annotationStartY, 2)
+                    );
+                    this.annotationCtx.beginPath();
+                    this.annotationCtx.arc(
+                        this.annotationStartX,
+                        this.annotationStartY,
+                        radius,
+                        0,
+                        Math.PI * 2
+                    );
+                    this.annotationCtx.stroke();
+                }
+            }
+        }
+    }
+
+    stopAnnotating() {
+        if (this.isAnnotating && this.annotationTool === 'pen') {
+            // ペンの描画を保存
+            this.annotations.push({
+                type: 'pen',
+                color: this.annotationColor,
+                lineWidth: this.annotationLineWidth
+            });
+        }
+        this.isAnnotating = false;
+        this.annotationTempImage = null;
+    }
+
+    drawArrow(fromX, fromY, toX, toY) {
+        const headLength = 20; // 矢印の頭の長さ
+        const angle = Math.atan2(toY - fromY, toX - fromX);
+
+        // 線を描画
+        this.annotationCtx.beginPath();
+        this.annotationCtx.moveTo(fromX, fromY);
+        this.annotationCtx.lineTo(toX, toY);
+        this.annotationCtx.stroke();
+
+        // 矢印の頭を描画
+        this.annotationCtx.beginPath();
+        this.annotationCtx.moveTo(toX, toY);
+        this.annotationCtx.lineTo(
+            toX - headLength * Math.cos(angle - Math.PI / 6),
+            toY - headLength * Math.sin(angle - Math.PI / 6)
+        );
+        this.annotationCtx.moveTo(toX, toY);
+        this.annotationCtx.lineTo(
+            toX - headLength * Math.cos(angle + Math.PI / 6),
+            toY - headLength * Math.sin(angle + Math.PI / 6)
+        );
+        this.annotationCtx.stroke();
+    }
+
+    addText(text, x, y) {
+        const ctx = this.annotationCtx;
+        ctx.fillStyle = this.annotationColor;
+        ctx.font = `bold ${this.annotationLineWidth * 8}px sans-serif`;
+        ctx.fillText(text, x, y);
+
+        this.annotations.push({
+            type: 'text',
+            text: text,
+            x: x,
+            y: y,
+            color: this.annotationColor,
+            size: this.annotationLineWidth * 8
+        });
+    }
+
+    addStamp(stampType) {
+        if (!this.annotationCanvas) {
+            alert('先に写真を選択してください');
+            return;
+        }
+
+        const ctx = this.annotationCtx;
+        const x = this.annotationCanvas.width / 2;
+        const y = this.annotationCanvas.height / 2;
+        const size = 80;
+
+        // スタンプの背景色と文字色
+        let bgColor, textColor, text;
+        if (stampType === 'OK') {
+            bgColor = '#e8f5e9';
+            textColor = '#388e3c';
+            text = '✅ OK';
+        } else if (stampType === 'NG') {
+            bgColor = '#ffebee';
+            textColor = '#d32f2f';
+            text = '❌ NG';
+        } else if (stampType === '要確認') {
+            bgColor = '#fff3e0';
+            textColor = '#f57c00';
+            text = '⚠️ 要確認';
+        }
+
+        // 背景を描画
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(x - size, y - size / 2, size * 2, size);
+
+        // 枠線を描画
+        ctx.strokeStyle = textColor;
+        ctx.lineWidth = 3;
+        ctx.strokeRect(x - size, y - size / 2, size * 2, size);
+
+        // テキストを描画
+        ctx.fillStyle = textColor;
+        ctx.font = `bold ${size / 2}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, x, y);
+
+        // テキスト配置をリセット
+        ctx.textAlign = 'start';
+        ctx.textBaseline = 'alphabetic';
+
+        this.annotations.push({
+            type: 'stamp',
+            stampType: stampType,
+            x: x,
+            y: y,
+            size: size
+        });
+    }
+
+    clearAnnotationCanvas() {
+        if (!this.annotationCanvas || !this.currentEditingPhoto) return;
+
+        const confirmed = confirm('すべての注釈を消去しますか？');
+        if (!confirmed) return;
+
+        this.annotations = [];
+
+        // 元画像を再描画
+        const img = document.getElementById(`photo-img-${this.currentEditingPhoto.id}`);
+        this.annotationCtx.clearRect(0, 0, this.annotationCanvas.width, this.annotationCanvas.height);
+        this.annotationCtx.drawImage(
+            img,
+            0, 0,
+            this.annotationCanvas.width,
+            this.annotationCanvas.height
+        );
+    }
+
+    restoreAnnotations() {
+        // 将来的に保存された注釈データを復元する場合に使用
+        // 現在は何もしない
+    }
+
+    async saveAnnotatedPhoto() {
+        if (!this.annotationCanvas || !this.currentEditingPhoto) return;
+
+        // Canvasを画像に変換
+        this.annotationCanvas.toBlob(async (blob) => {
+            const formData = new FormData();
+            formData.append('photo', blob, `annotated-${Date.now()}.jpg`);
+            formData.append('projectId', this.currentEditingPhoto.projectId);
+            formData.append('caption', `${this.currentEditingPhoto.caption || '写真'} (注釈付き)`);
+
+            // カテゴリー情報を引き継ぐ
+            if (this.currentEditingPhoto.category) {
+                formData.append('category', JSON.stringify(this.currentEditingPhoto.category));
+            }
+
+            try {
+                const response = await fetch(API_BASE + '/photos/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('注釈付き写真を保存しました');
+                    await this.loadPhotos();
+                    this.renderPhotos();
+                    this.closeEditPhotoModal();
+                } else {
+                    alert('保存に失敗しました: ' + (result.error?.message || '不明なエラー'));
+                }
+            } catch (error) {
+                console.error('写真アップロードエラー:', error);
+                alert('アップロードに失敗しました');
+            }
+        }, 'image/jpeg', 0.95);
+    }
+
+    closeEditPhotoModal() {
+        this.closeModal('edit-photo-modal');
+        this.currentEditingPhoto = null;
+        this.annotations = [];
+        this.annotationCanvas = null;
+        this.annotationCtx = null;
     }
 }
 

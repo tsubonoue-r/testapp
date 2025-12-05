@@ -667,6 +667,59 @@
         </div>
     </div>
 
+    <!-- 写真注釈編集モーダル -->
+    <div id="edit-photo-modal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>✏️ 写真に注釈を追加</h2>
+            </div>
+            <div class="modal-body">
+                <div class="edit-canvas-container">
+                    <canvas id="annotation-canvas" class="edit-canvas"></canvas>
+                </div>
+                <div class="form-group">
+                    <label>描画ツール</label>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                        <button class="btn btn-secondary" onclick="app.setAnnotationTool('pen')" id="annotation-tool-pen">🖊️ ペン</button>
+                        <button class="btn btn-secondary" onclick="app.setAnnotationTool('arrow')" id="annotation-tool-arrow">➡️ 矢印</button>
+                        <button class="btn btn-secondary" onclick="app.setAnnotationTool('rectangle')" id="annotation-tool-rectangle">⬜ 四角</button>
+                        <button class="btn btn-secondary" onclick="app.setAnnotationTool('circle')" id="annotation-tool-circle">⭕ 丸</button>
+                        <button class="btn btn-secondary" onclick="app.setAnnotationTool('text')" id="annotation-tool-text">📝 テキスト</button>
+                        <button class="btn btn-secondary" onclick="app.setAnnotationTool('eraser')" id="annotation-tool-eraser">🧹 消しゴム</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>スタンプ</label>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                        <button class="btn btn-secondary" onclick="app.addStamp('OK')" style="background: #e8f5e9; color: #388e3c;">✅ OK</button>
+                        <button class="btn btn-secondary" onclick="app.addStamp('NG')" style="background: #ffebee; color: #d32f2f;">❌ NG</button>
+                        <button class="btn btn-secondary" onclick="app.addStamp('要確認')" style="background: #fff3e0; color: #f57c00;">⚠️ 要確認</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>線の太さ</label>
+                    <input type="range" id="annotation-line-width" min="2" max="15" value="3" oninput="app.setAnnotationLineWidth(this.value)">
+                </div>
+                <div class="form-group">
+                    <label>色</label>
+                    <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px;">
+                        <button onclick="app.setAnnotationColor('#ff0000')" style="background: #ff0000; height: 40px; border-radius: 8px; border: 2px solid #ddd;"></button>
+                        <button onclick="app.setAnnotationColor('#0000ff')" style="background: #0000ff; height: 40px; border-radius: 8px; border: 2px solid #ddd;"></button>
+                        <button onclick="app.setAnnotationColor('#00ff00')" style="background: #00ff00; height: 40px; border-radius: 8px; border: 2px solid #ddd;"></button>
+                        <button onclick="app.setAnnotationColor('#ffff00')" style="background: #ffff00; height: 40px; border-radius: 8px; border: 2px solid #ddd;"></button>
+                        <button onclick="app.setAnnotationColor('#000000')" style="background: #000000; height: 40px; border-radius: 8px; border: 2px solid #ddd;"></button>
+                        <button onclick="app.setAnnotationColor('#ffffff')" style="background: #ffffff; height: 40px; border-radius: 8px; border: 2px solid #333;"></button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeEditPhotoModal()">キャンセル</button>
+                <button class="btn btn-danger" onclick="app.clearAnnotationCanvas()">全消去</button>
+                <button class="btn btn-primary" onclick="app.saveAnnotatedPhoto()">保存</button>
+            </div>
+        </div>
+    </div>
+
     <script src="/app.js?v=2"></script>
     <script src="/pwa-init.js?v=2"></script>
 </body>
