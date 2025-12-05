@@ -34,6 +34,10 @@ class App {
         this.annotationTempImage = null;
         this.annotations = [];
 
+        // 写真一括管理機能用
+        this.selectionMode = false;
+        this.selectedPhotos = new Set();
+
         this.init();
     }
 
@@ -391,8 +395,19 @@ class App {
             // カテゴリーバッジを生成
             const categoryBadges = this.renderCategoryBadges(photo.category);
 
+            const isSelected = this.selectedPhotos.has(photo.id);
+            const checkboxHtml = this.selectionMode ? `
+                <div style="position: absolute; top: 8px; left: 8px; z-index: 10;">
+                    <input type="checkbox"
+                           ${isSelected ? 'checked' : ''}
+                           onchange="app.togglePhotoSelection('${photo.id}')"
+                           style="width: 24px; height: 24px; cursor: pointer;">
+                </div>
+            ` : '';
+
             return `
-                <div class="card">
+                <div class="card" style="position: relative;">
+                    ${checkboxHtml}
                     <h3>${photo.caption || '写真'}</h3>
                     <div class="card-meta">
                         <span>🏗️ ${project ? this.escapeHtml(project.name) : '不明な案件'}</span>
@@ -405,7 +420,7 @@ class App {
                     <p style="font-size: 13px; color: #666; margin-top: 8px;">
                         ${photo.filename} • ${photo.metadata.width}x${photo.metadata.height} • ${this.formatFileSize(photo.metadata.size)}
                     </p>
-                    <div class="card-actions">
+                    <div class="card-actions" style="${this.selectionMode ? 'display: none;' : ''}">
                         <button class="btn btn-primary" onclick="app.editPhoto('${photo.id}')">✏️ 注釈を追加</button>
                     </div>
                 </div>
@@ -1515,6 +1530,163 @@ class App {
     truncateText(text, maxLength) {
         if (text.length <= maxLength) return text;
         return text.substring(0, maxLength - 3) + '...';
+    }
+
+    // ===================
+    // 写真一括管理機能
+    // ===================
+
+    toggleSelectionMode() {
+        this.selectionMode = !this.selectionMode;
+        this.selectedPhotos.clear();
+
+        // UIを更新
+        const toolbar = document.getElementById('selection-toolbar');
+        const modeBtn = document.getElementById('selection-mode-btn');
+
+        if (this.selectionMode) {
+            toolbar.style.display = 'block';
+            modeBtn.textContent = '✕ 選択解除';
+            modeBtn.classList.remove('btn-secondary');
+            modeBtn.classList.add('btn-danger');
+        } else {
+            toolbar.style.display = 'none';
+            modeBtn.textContent = '✓ 選択モード';
+            modeBtn.classList.remove('btn-danger');
+            modeBtn.classList.add('btn-secondary');
+        }
+
+        this.updateSelectionCount();
+        this.renderPhotos();
+    }
+
+    togglePhotoSelection(photoId) {
+        if (this.selectedPhotos.has(photoId)) {
+            this.selectedPhotos.delete(photoId);
+        } else {
+            this.selectedPhotos.add(photoId);
+        }
+        this.updateSelectionCount();
+    }
+
+    selectAllPhotos() {
+        this.photos.forEach(photo => {
+            this.selectedPhotos.add(photo.id);
+        });
+        this.updateSelectionCount();
+        this.renderPhotos();
+    }
+
+    updateSelectionCount() {
+        const countElement = document.getElementById('selection-count');
+        if (countElement) {
+            countElement.textContent = `${this.selectedPhotos.size}枚選択中`;
+        }
+    }
+
+    async bulkDeletePhotos() {
+        if (this.selectedPhotos.size === 0) {
+            alert('削除する写真を選択してください');
+            return;
+        }
+
+        const confirmed = confirm(`選択した${this.selectedPhotos.size}枚の写真を削除しますか？\nこの操作は元に戻せません。`);
+        if (!confirmed) return;
+
+        try {
+            let successCount = 0;
+            let errorCount = 0;
+
+            for (const photoId of this.selectedPhotos) {
+                try {
+                    const response = await this.api(`/photos/${photoId}`, {
+                        method: 'DELETE',
+                    });
+
+                    if (response.success) {
+                        successCount++;
+                    } else {
+                        errorCount++;
+                    }
+                } catch (error) {
+                    console.error('削除エラー:', photoId, error);
+                    errorCount++;
+                }
+            }
+
+            alert(`${successCount}枚の写真を削除しました${errorCount > 0 ? `\n${errorCount}枚の削除に失敗しました` : ''}`);
+
+            // 選択をクリアして再読み込み
+            this.selectedPhotos.clear();
+            await this.loadPhotos();
+            this.renderPhotos();
+            this.updateSelectionCount();
+
+        } catch (error) {
+            console.error('一括削除エラー:', error);
+            alert('一括削除に失敗しました');
+        }
+    }
+
+    async bulkMovePhotos() {
+        if (this.selectedPhotos.size === 0) {
+            alert('移動する写真を選択してください');
+            return;
+        }
+
+        // 案件選択ダイアログを表示
+        const projectOptions = this.projects.map(p =>
+            `${p.id}:${this.escapeHtml(p.name)}`
+        ).join('\n');
+
+        const selectedProject = prompt(`移動先の案件を選択してください（${this.selectedPhotos.size}枚）\n\n利用可能な案件:\n${this.projects.map((p, i) => `${i + 1}. ${p.name}`).join('\n')}\n\n番号を入力してください:`);
+
+        if (!selectedProject) return;
+
+        const projectIndex = parseInt(selectedProject) - 1;
+        if (projectIndex < 0 || projectIndex >= this.projects.length) {
+            alert('無効な番号です');
+            return;
+        }
+
+        const targetProject = this.projects[projectIndex];
+
+        try {
+            let successCount = 0;
+            let errorCount = 0;
+
+            for (const photoId of this.selectedPhotos) {
+                try {
+                    const response = await this.api(`/photos/${photoId}`, {
+                        method: 'PUT',
+                        body: JSON.stringify({
+                            projectId: targetProject.id,
+                        }),
+                    });
+
+                    if (response.success) {
+                        successCount++;
+                    } else {
+                        errorCount++;
+                    }
+                } catch (error) {
+                    console.error('移動エラー:', photoId, error);
+                    errorCount++;
+                }
+            }
+
+            alert(`${successCount}枚の写真を「${targetProject.name}」に移動しました${errorCount > 0 ? `\n${errorCount}枚の移動に失敗しました` : ''}`);
+
+            // 選択をクリアして再読み込み
+            this.selectedPhotos.clear();
+            await this.loadPhotos();
+            this.renderPhotos();
+            this.updateSelectionCount();
+
+        } catch (error) {
+            console.error('一括移動エラー:', error);
+            alert('一括移動に失敗しました');
+        }
     }
 }
 

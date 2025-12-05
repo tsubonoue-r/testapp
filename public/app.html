@@ -473,7 +473,24 @@
                         </select>
                     </div>
                 </div>
-                <button class="btn btn-primary" onclick="app.exportPhotosToPDF()" style="margin-bottom: 16px;">📄 PDF出力（A4、4枚/ページ）</button>
+                <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                    <button class="btn btn-primary" onclick="app.exportPhotosToPDF()" style="flex: 1;">📄 PDF出力</button>
+                    <button class="btn btn-secondary" onclick="app.toggleSelectionMode()" id="selection-mode-btn" style="flex: 1;">✓ 選択モード</button>
+                </div>
+
+                <!-- 選択ツールバー（選択モード時のみ表示） -->
+                <div id="selection-toolbar" style="display: none; background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <span id="selection-count" style="font-weight: 600;">0枚選択中</span>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-secondary" onclick="app.selectAllPhotos()" style="padding: 8px 16px;">全選択</button>
+                            <button class="btn btn-secondary" onclick="app.bulkMovePhotos()" style="padding: 8px 16px;">📦 移動</button>
+                            <button class="btn btn-danger" onclick="app.bulkDeletePhotos()" style="padding: 8px 16px;">🗑️ 削除</button>
+                            <button class="btn btn-secondary" onclick="app.toggleSelectionMode()" style="padding: 8px 16px;">キャンセル</button>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="photos-list"></div>
             </div>
         </div>
