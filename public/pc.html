@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#667eea">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+    <title>工事看板写真システム - PC版</title>
+
+    <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', sans-serif;
+            background: #f5f7fa;
+            color: #2c3e50;
+        }
+
+        /* PC版専用: フル幅レイアウト */
+        .app {
+            width: 100%;
+            min-height: 100vh;
+            background: #f5f7fa;
+        }
+
+        /* ヘッダー */
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            font-size: 32px;
+        }
+
+        header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .header-btn {
+            padding: 8px 16px;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+
+        .header-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* タブナビゲーション */
+        .tabs {
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            position: sticky;
+            top: 72px;
+            z-index: 90;
+        }
+
+        .tabs-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            padding: 0 32px;
+        }
+
+        .tab {
+            padding: 16px 24px;
+            background: none;
+            border: none;
+            font-size: 15px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            font-weight: 500;
+        }
+
+        .tab:hover {
+            color: #667eea;
+            background: #f5f7fa;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: 600;
+        }
+
+        /* メインコンテンツ */
+        .content {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* カード */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 1px solid #e0e0e0;
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .card h3 {
+            font-size: 18px;
+            margin-bottom: 12px;
+            color: #2c3e50;
+        }
+
+        .card-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .badge.status-in_progress {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .badge.status-planned {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .badge.status-completed {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        /* ボタン */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #d32f2f;
+        }
+
+        /* グリッドレイアウト */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        /* 写真グリッド */
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .photo-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .photo-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+        }
+
+        .photo-card img {
+            width: 100%;
+            aspect-ratio: 4/3;
+            object-fit: cover;
+        }
+
+        .photo-card-info {
+            padding: 12px;
+        }
+
+        .photo-card-caption {
+            font-size: 14px;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .photo-card-meta {
+            font-size: 12px;
+            color: #999;
+        }
+
+        /* モーダル */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            max-width: 600px;
+            width: 90%;
+            border-radius: 16px;
+            overflow: hidden;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .modal-header h2 {
+            font-size: 20px;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            padding: 0 24px 24px;
+        }
+
+        .modal-actions button {
+            flex: 1;
+        }
+
+        /* 検索バー */
+        .search-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            align-items: center;
+        }
+
+        .search-bar input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .search-bar select {
+            padding: 12px 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            min-width: 150px;
+        }
+
+        /* 統計カード */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .stat-card h3 {
+            font-size: 36px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-card p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* テーブル表示 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        table thead {
+            background: #f5f7fa;
+        }
+
+        table th {
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+
+        table td {
+            padding: 16px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 14px;
+        }
+
+        table tbody tr:hover {
+            background: #f5f7fa;
+        }
+
+        table img {
+            width: 60px;
+            height: 45px;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 64px 16px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 72px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: #666;
+        }
+
+        /* ツールバー */
+        .toolbar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-left {
+            flex: 1;
+            display: flex;
+            gap: 12px;
+        }
+
+        .toolbar-right {
+            display: flex;
+            gap: 12px;
+        }
+
+        /* 選択ツールバー */
+        #selection-toolbar {
+            display: none;
+            background: #667eea;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            align-items: center;
+            gap: 16px;
+        }
+
+        #selection-toolbar.active {
+            display: flex;
+        }
+
+        #selection-count {
+            flex: 1;
+            font-weight: 600;
+        }
+
+        /* レスポンシブ */
+        @media (max-width: 1024px) {
+            .content {
+                padding: 24px;
+            }
+
+            .tabs-container,
+            .header-container {
+                padding: 0 24px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-container {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .photo-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .toolbar {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- ヘッダー -->
+        <header>
+            <div class="header-container">
+                <div class="header-left">
+                    <div class="logo">🌸</div>
+                    <div>
+                        <h1>📸 工事看板写真システム - PC版</h1>
+                        <p>蔵衛門スタイル 管理・編集デスクトップ版</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <a href="/app.html" class="header-btn">📱 モバイル版</a>
+                    <a href="/desktop.html" class="header-btn">🏠 ホーム</a>
+                </div>
+            </div>
+        </header>
+
+        <!-- タブナビゲーション -->
+        <div class="tabs">
+            <div class="tabs-container">
+                <button class="tab active" data-tab="dashboard">📊 ダッシュボード</button>
+                <button class="tab" data-tab="projects">📋 案件</button>
+                <button class="tab" data-tab="signboards">🚧 看板</button>
+                <button class="tab" data-tab="photos">📷 写真</button>
+            </div>
+        </div>
+
+        <!-- メインコンテンツ -->
+        <div class="content">
+            <!-- ダッシュボード -->
+            <div id="dashboard" class="section active">
+                <h2 style="margin-bottom: 24px; font-size: 28px;">📊 統計ダッシュボード</h2>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3 id="stat-projects">0</h3>
+                        <p>📋 案件数</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="stat-photos">0</h3>
+                        <p>📷 写真数</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="stat-signboards">0</h3>
+                        <p>🚧 看板数</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="stat-categories">0</h3>
+                        <p>🏷️ カテゴリー数</p>
+                    </div>
+                </div>
+
+                <div class="grid">
+                    <div class="card">
+                        <h3>📋 案件別写真数</h3>
+                        <div id="project-stats"></div>
+                    </div>
+                    <div class="card">
+                        <h3>🏗️ 工程別</h3>
+                        <div id="category-process-stats"></div>
+                    </div>
+                    <div class="card">
+                        <h3>🔨 作業種別</h3>
+                        <div id="category-worktype-stats"></div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 24px;">
+                    <h3>📸 最近の活動</h3>
+                    <div id="recent-activity"></div>
+                </div>
+            </div>
+
+            <!-- 案件セクション -->
+            <div id="projects" class="section">
+                <div class="toolbar">
+                    <div class="toolbar-left">
+                        <h2 style="font-size: 24px;">📋 案件管理</h2>
+                    </div>
+                    <div class="toolbar-right">
+                        <button class="btn btn-secondary" onclick="app.toggleArchivedProjects()">
+                            <span id="archive-toggle-text">📦 アーカイブを表示</span>
+                        </button>
+                        <button class="btn btn-primary" onclick="app.showCreateProjectModal()">➕ 新規案件</button>
+                    </div>
+                </div>
+                <div id="projects-list" class="grid"></div>
+            </div>
+
+            <!-- 看板セクション -->
+            <div id="signboards" class="section">
+                <div class="toolbar">
+                    <div class="toolbar-left">
+                        <h2 style="font-size: 24px;">🚧 工事看板管理</h2>
+                    </div>
+                    <div class="toolbar-right">
+                        <button class="btn btn-primary" onclick="app.showCreateSignboardModal()">➕ 新規看板</button>
+                    </div>
+                </div>
+                <div id="signboards-list" class="grid"></div>
+            </div>
+
+            <!-- 写真セクション -->
+            <div id="photos" class="section">
+                <div class="toolbar">
+                    <div class="toolbar-left">
+                        <h2 style="font-size: 24px;">📷 写真管理</h2>
+                    </div>
+                    <div class="toolbar-right">
+                        <button class="btn btn-secondary" onclick="app.togglePhotoViewMode()">
+                            <span id="view-mode-text">📋 リスト表示</span>
+                        </button>
+                        <button class="btn btn-secondary" onclick="app.toggleSelectionMode()" id="selection-mode-btn">✓ 選択モード</button>
+                    </div>
+                </div>
+
+                <!-- 検索・フィルター -->
+                <div class="search-bar">
+                    <input type="text" id="search-input" placeholder="🔍 写真を検索（キャプション、カテゴリー、ファイル名）" oninput="app.searchPhotos(this.value)">
+                    <select id="filter-project" onchange="app.filterByProject(this.value)">
+                        <option value="">📋 全案件</option>
+                    </select>
+                    <select id="filter-category" onchange="app.filterByCategory(this.value)">
+                        <option value="">🏷️ 全カテゴリー</option>
+                    </select>
+                    <select id="sort-photos" onchange="app.sortPhotos(this.value)">
+                        <option value="date-desc">📅 新しい順</option>
+                        <option value="date-asc">📅 古い順</option>
+                        <option value="category">🏷️ カテゴリー順</option>
+                        <option value="name-asc">📝 名前 A→Z</option>
+                        <option value="name-desc">📝 名前 Z→A</option>
+                    </select>
+                </div>
+
+                <!-- 選択ツールバー -->
+                <div id="selection-toolbar">
+                    <span id="selection-count">0枚選択中</span>
+                    <button class="btn btn-secondary" onclick="app.deleteSelectedPhotos()">🗑️ 削除</button>
+                    <button class="btn btn-secondary" onclick="app.moveSelectedPhotos()">📁 移動</button>
+                </div>
+
+                <!-- 操作バー -->
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px;">
+                    <button class="btn btn-primary" onclick="app.showPDFSettingsModal()">📄 PDF出力</button>
+                    <button class="btn btn-secondary" onclick="app.exportPhotos('json')">📥 JSONエクスポート</button>
+                    <button class="btn btn-secondary" onclick="app.exportPhotos('csv')">📥 CSVエクスポート</button>
+                    <button class="btn btn-secondary" onclick="app.showCompareModal()">🔄 Before/After比較</button>
+                </div>
+
+                <div id="photos-list" class="photo-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 以下、app.htmlと同じモーダル群を含む -->
+    <!-- 案件作成/編集モーダル、看板モーダル、写真編集モーダル、PDF設定モーダルなど -->
+    <!-- スペースの都合上、app.htmlからコピーしたモーダル部分は省略 -->
+
+    <script src="/app.js"></script>
+    <script>
+        // PC版専用の初期化処理
+        document.addEventListener('DOMContentLoaded', () => {
+            // タブ切り替え
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetTab = tab.dataset.tab;
+
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+
+                    tab.classList.add('active');
+                    document.getElementById(targetTab).classList.add('active');
+
+                    // ダッシュボードタブの場合は統計を更新
+                    if (targetTab === 'dashboard' && window.app) {
+                        app.renderDashboard();
+                    }
+                });
+            });
+        });
+    </script>
+    <!-- 案件作成/編集モーダル -->
+    <div id="project-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="project-modal-title">新しい案件を作成</h2>
+            </div>
+            <div class="modal-body">
+                <form id="project-form">
+                    <div class="form-group">
+                        <label>案件名 *</label>
+                        <input type="text" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>場所 *</label>
+                        <input type="text" name="location" required>
+                    </div>
+                    <div class="form-group">
+                        <label>説明</label>
+                        <textarea name="description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>開始日 *</label>
+                        <input type="date" name="startDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>終了日</label>
+                        <input type="date" name="endDate">
+                    </div>
+                    <div class="form-group">
+                        <label>ステータス</label>
+                        <select name="status">
+                            <option value="planned">計画中</option>
+                            <option value="in_progress">進行中</option>
+                            <option value="completed">完了</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeModal('project-modal')">キャンセル</button>
+                <button class="btn btn-primary" onclick="app.saveProject()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 看板作成/編集モーダル -->
+    <div id="signboard-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>新しい看板を作成</h2>
+            </div>
+            <div class="modal-body">
+                <form id="signboard-form">
+                    <div class="form-group">
+                        <label>案件 *</label>
+                        <select name="projectId" id="signboard-project-select" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>タイトル *</label>
+                        <input type="text" name="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label>工事名</label>
+                        <input type="text" name="projectName">
+                    </div>
+                    <div class="form-group">
+                        <label>工事期間</label>
+                        <input type="text" name="constructionPeriod">
+                    </div>
+                    <div class="form-group">
+                        <label>施工会社</label>
+                        <input type="text" name="contractor">
+                    </div>
+                    <div class="form-group">
+                        <label>監督者</label>
+                        <input type="text" name="supervisor">
+                    </div>
+                    <div class="form-group">
+                        <label>連絡先</label>
+                        <input type="text" name="contact">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeModal('signboard-modal')">キャンセル</button>
+                <button class="btn btn-primary" onclick="app.saveSignboard()">保存</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- 看板編集モーダル -->
+    <div id="edit-signboard-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🖊️ 看板を編集（黒板モード）</h2>
+            </div>
+            <div class="modal-body">
+                <div class="edit-canvas-container">
+                    <canvas id="edit-canvas" class="edit-canvas"></canvas>
+                </div>
+                <div class="form-group">
+                    <label>描画ツール</label>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-secondary" onclick="app.setDrawTool('pen')" id="tool-pen">🖊️ ペン</button>
+                        <button class="btn btn-secondary" onclick="app.setDrawTool('eraser')" id="tool-eraser">🧹 消しゴム</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>ペンの太さ</label>
+                    <input type="range" id="pen-size" min="2" max="20" value="3" oninput="app.setPenSize(this.value)">
+                </div>
+                <div class="form-group">
+                    <label>ペンの色</label>
+                    <input type="color" id="pen-color" value="#000000" onchange="app.setPenColor(this.value)">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeEditSignboardModal()">キャンセル</button>
+                <button class="btn btn-danger" onclick="app.clearCanvas()">全消去</button>
+                <button class="btn btn-primary" onclick="app.saveEditedSignboard()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Before/After比較モーダル -->
+    <div id="comparison-modal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>📊 Before / After 比較</h2>
+            </div>
+            <div class="modal-body">
+                <div style="position: relative; width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 8px; overflow: hidden;">
+                    <img id="comparison-before" src="" alt="Before" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;">
+                    <img id="comparison-after" src="" alt="After" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0.5;">
+                </div>
+                <div style="margin-top: 16px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">透過度調整（Before ← → After）</label>
+                    <input type="range" id="comparison-slider" min="0" max="100" value="50"
+                           oninput="app.updateComparisonOpacity(this.value)"
+                           style="width: 100%; height: 8px; border-radius: 4px; background: linear-gradient(to right, #667eea 0%, #764ba2 100%);">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
+                    <div>
+                        <p style="font-weight: 600; margin-bottom: 4px;">📷 Before</p>
+                        <p id="comparison-before-info" style="font-size: 13px; color: #666;"></p>
+                    </div>
+                    <div>
+                        <p style="font-weight: 600; margin-bottom: 4px;">📷 After</p>
+                        <p id="comparison-after-info" style="font-size: 13px; color: #666;"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeComparisonModal()">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF出力設定モーダル -->
+    <div id="pdf-settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📄 PDF出力設定</h2>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>レイアウト</label>
+                    <select id="pdf-layout">
+                        <option value="1">1枚/ページ</option>
+                        <option value="2">2枚/ページ</option>
+                        <option value="4" selected>4枚/ページ</option>
+                        <option value="6">6枚/ページ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>会社名（ヘッダー）</label>
+                    <input type="text" id="pdf-company-name" placeholder="例: 株式会社○○建設">
+                </div>
+                <div class="form-group">
+                    <label>案件名（ヘッダー）</label>
+                    <input type="text" id="pdf-project-name" placeholder="自動設定">
+                </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="pdf-show-date" checked style="width: 20px; height: 20px;">
+                        <span>日付を表示（フッター）</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="pdf-show-page-number" checked style="width: 20px; height: 20px;">
+                        <span>ページ番号を表示</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closePDFSettingsModal()">キャンセル</button>
+                <button class="btn btn-primary" onclick="app.generatePDFWithSettings()">📄 PDF生成</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 写真注釈編集モーダル -->
+    <div id="edit-photo-modal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>✏️ 写真に注釈を追加</h2>
+            </div>
+            <div class="modal-body">
+                <div class="edit-canvas-container">
+                    <canvas id="annotation-canvas" class="edit-canvas"></canvas>
+                </div>
+                <div class="form-group">
+                    <label>描画ツール</label>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                        <button class="btn btn-secondary" onclick="app.setAnnotationTool('pen')" id="annotation-tool-pen">🖊️ ペン</button>
+                        <button class="btn btn-secondary" onclick="app.setAnnotationTool('arrow')" id="annotation-tool-arrow">➡️ 矢印</button>
+                        <button class="btn btn-secondary" onclick="app.setAnnotationTool('rectangle')" id="annotation-tool-rectangle">⬜ 四角</button>
+                        <button class="btn btn-secondary" onclick="app.setAnnotationTool('circle')" id="annotation-tool-circle">⭕ 丸</button>
+                        <button class="btn btn-secondary" onclick="app.setAnnotationTool('text')" id="annotation-tool-text">📝 テキスト</button>
+                        <button class="btn btn-secondary" onclick="app.setAnnotationTool('eraser')" id="annotation-tool-eraser">🧹 消しゴム</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>スタンプ</label>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                        <button class="btn btn-secondary" onclick="app.addStamp('OK')" style="background: #e8f5e9; color: #388e3c;">✅ OK</button>
+                        <button class="btn btn-secondary" onclick="app.addStamp('NG')" style="background: #ffebee; color: #d32f2f;">❌ NG</button>
+                        <button class="btn btn-secondary" onclick="app.addStamp('要確認')" style="background: #fff3e0; color: #f57c00;">⚠️ 要確認</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>線の太さ</label>
+                    <input type="range" id="annotation-line-width" min="2" max="15" value="3" oninput="app.setAnnotationLineWidth(this.value)">
+                </div>
+                <div class="form-group">
+                    <label>色</label>
+                    <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px;">
+                        <button onclick="app.setAnnotationColor('#ff0000')" style="background: #ff0000; height: 40px; border-radius: 8px; border: 2px solid #ddd;"></button>
+                        <button onclick="app.setAnnotationColor('#0000ff')" style="background: #0000ff; height: 40px; border-radius: 8px; border: 2px solid #ddd;"></button>
+                        <button onclick="app.setAnnotationColor('#00ff00')" style="background: #00ff00; height: 40px; border-radius: 8px; border: 2px solid #ddd;"></button>
+                        <button onclick="app.setAnnotationColor('#ffff00')" style="background: #ffff00; height: 40px; border-radius: 8px; border: 2px solid #ddd;"></button>
+                        <button onclick="app.setAnnotationColor('#000000')" style="background: #000000; height: 40px; border-radius: 8px; border: 2px solid #ddd;"></button>
+                        <button onclick="app.setAnnotationColor('#ffffff')" style="background: #ffffff; height: 40px; border-radius: 8px; border: 2px solid #333;"></button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeEditPhotoModal()">キャンセル</button>
+                <button class="btn btn-danger" onclick="app.clearAnnotationCanvas()">全消去</button>
+                <button class="btn btn-primary" onclick="app.saveAnnotatedPhoto()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/app.js"></script>
+    <script>
+        // PC版専用の初期化処理
+        document.addEventListener('DOMContentLoaded', () => {
+            // タブ切り替え
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetTab = tab.dataset.tab;
+
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+
+                    tab.classList.add('active');
+                    document.getElementById(targetTab).classList.add('active');
+
+                    // ダッシュボードタブの場合は統計を更新
+                    if (targetTab === 'dashboard' && window.app) {
+                        app.renderDashboard();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
