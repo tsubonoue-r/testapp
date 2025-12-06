@@ -55,11 +55,17 @@ class App {
             caption: ''
         };
 
+        // ダークモード（Phase 7-6）
+        this.darkMode = localStorage.getItem('darkMode') === 'true';
+
         this.init();
     }
 
     async init() {
         console.log('🚀 アプリ初期化開始');
+
+        // ダークモードを適用
+        this.applyDarkMode();
 
         try {
             // イベントリスナー設定
@@ -2485,6 +2491,30 @@ class App {
         } catch (error) {
             console.error('Upload error:', error);
             alert('アップロードに失敗しました: ' + error.message);
+        }
+    }
+
+    // ===================
+    // Phase 7-6: ダークモード
+    // ===================
+
+    toggleDarkMode() {
+        this.darkMode = !this.darkMode;
+        localStorage.setItem('darkMode', this.darkMode);
+        this.applyDarkMode();
+    }
+
+    applyDarkMode() {
+        if (this.darkMode) {
+            document.body.classList.add('dark-mode');
+        } else {
+            document.body.classList.remove('dark-mode');
+        }
+
+        // トグルボタンのアイコンを更新
+        const toggleBtn = document.getElementById('dark-mode-toggle');
+        if (toggleBtn) {
+            toggleBtn.textContent = this.darkMode ? '☀️' : '🌙';
         }
     }
 }

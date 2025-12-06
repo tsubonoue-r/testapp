@@ -552,6 +552,84 @@
                 flex-direction: column;
             }
         }
+
+        /* Phase 7-6: ダークモード */
+        body.dark-mode {
+            background: #0a0a0a;
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .app {
+            background: #0a0a0a;
+        }
+
+        body.dark-mode header {
+            background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+        }
+
+        body.dark-mode .tabs {
+            background: #1a1a1a;
+            border-bottom-color: #4a5568;
+        }
+
+        body.dark-mode .tab {
+            color: #a0aec0;
+        }
+
+        body.dark-mode .tab.active {
+            color: #90cdf4;
+            border-bottom-color: #90cdf4;
+        }
+
+        body.dark-mode .sidebar,
+        body.dark-mode .card,
+        body.dark-mode .stat-card,
+        body.dark-mode .feature-card {
+            background: #1a1a1a;
+            border-color: #4a5568;
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .btn-secondary {
+            background: #4a5568;
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .modal-content {
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .form-group input,
+        body.dark-mode .form-group textarea,
+        body.dark-mode .form-group select,
+        body.dark-mode .search-bar input,
+        body.dark-mode .search-bar select {
+            background: #2d3748;
+            color: #e0e0e0;
+            border-color: #4a5568;
+        }
+
+        body.dark-mode table {
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+
+        body.dark-mode table thead {
+            background: #0a0a0a;
+        }
+
+        body.dark-mode table td {
+            border-color: #4a5568;
+        }
+
+        body.dark-mode .photo-card {
+            background: #1a1a1a;
+        }
+
+        body.dark-mode #dark-mode-toggle:hover {
+            background: rgba(255,255,255,0.3);
+        }
     </style>
 </head>
 <body>
@@ -567,6 +645,10 @@
                     </div>
                 </div>
                 <div class="header-actions">
+                    <button id="dark-mode-toggle" onclick="app.toggleDarkMode()"
+                            style="background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; transition: all 0.3s; margin-right: 12px;">
+                        🌙
+                    </button>
                     <a href="/app.html" class="header-btn">📱 モバイル版</a>
                     <a href="/desktop.html" class="header-btn">🏠 ホーム</a>
                 </div>
