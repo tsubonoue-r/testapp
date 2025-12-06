@@ -44,6 +44,17 @@ class App {
         // 写真表示モード
         this.photoViewMode = 'grid'; // 'grid' or 'list'
 
+        // ファイルアップロード用（Phase 7-1）
+        this.uploadQueue = [];
+        this.uploadMetadata = {
+            projectId: null,
+            signboardId: null,
+            processType: '',
+            location: '',
+            workType: '',
+            caption: ''
+        };
+
         this.init();
     }
 
@@ -2312,6 +2323,169 @@ class App {
 
     closeComparisonModal() {
         this.closeModal('comparison-modal');
+    }
+
+    // ===================
+    // Phase 7-1: ファイルアップロード機能
+    // ===================
+
+    showFileUploadModal() {
+        // プロジェクトセレクトを更新
+        const projectSelect = document.getElementById('upload-project-select');
+        projectSelect.innerHTML = '<option value="">案件を選択...</option>';
+        this.projects.forEach(project => {
+            const option = document.createElement('option');
+            option.value = project.id;
+            option.textContent = project.name;
+            projectSelect.appendChild(option);
+        });
+
+        // アップロードキューをクリア
+        this.uploadQueue = [];
+        this.renderUploadPreview();
+
+        this.openModal('file-upload-modal');
+    }
+
+    closeFileUploadModal() {
+        this.uploadQueue = [];
+        this.closeModal('file-upload-modal');
+    }
+
+    handleFileInput(event) {
+        const files = Array.from(event.target.files);
+        this.addFilesToQueue(files);
+    }
+
+    handleFileDrop(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const files = Array.from(event.dataTransfer.files);
+        // 画像ファイルのみフィルター
+        const imageFiles = files.filter(file => file.type.startsWith('image/'));
+        this.addFilesToQueue(imageFiles);
+    }
+
+    handleDragOver(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.dataTransfer.dropEffect = 'copy';
+    }
+
+    addFilesToQueue(files) {
+        files.forEach(file => {
+            // プレビュー用のDataURLを生成
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                this.uploadQueue.push({
+                    file: file,
+                    preview: e.target.result,
+                    caption: '',
+                    processType: '',
+                    location: '',
+                    workType: ''
+                });
+                this.renderUploadPreview();
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    renderUploadPreview() {
+        const container = document.getElementById('upload-preview-container');
+        const count = document.getElementById('upload-count');
+
+        count.textContent = `${this.uploadQueue.length}枚`;
+
+        if (this.uploadQueue.length === 0) {
+            container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📁</div><p>ファイルをドラッグ&ドロップまたは選択してください</p></div>';
+            return;
+        }
+
+        container.innerHTML = this.uploadQueue.map((item, index) => `
+            <div class="upload-preview-card">
+                <img src="${item.preview}" alt="Preview">
+                <div class="upload-preview-info">
+                    <input type="text" placeholder="キャプション" value="${item.caption}"
+                           oninput="app.updateUploadItem(${index}, 'caption', this.value)">
+                    <button class="btn btn-danger" onclick="app.removeFromQueue(${index})" style="padding: 4px 8px; font-size: 12px;">削除</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    updateUploadItem(index, field, value) {
+        if (this.uploadQueue[index]) {
+            this.uploadQueue[index][field] = value;
+        }
+    }
+
+    removeFromQueue(index) {
+        this.uploadQueue.splice(index, 1);
+        this.renderUploadPreview();
+    }
+
+    async uploadFiles() {
+        const projectId = document.getElementById('upload-project-select').value;
+        const processType = document.getElementById('upload-process-type').value;
+        const location = document.getElementById('upload-location').value;
+        const workType = document.getElementById('upload-work-type').value;
+
+        if (!projectId) {
+            alert('案件を選択してください');
+            return;
+        }
+
+        if (this.uploadQueue.length === 0) {
+            alert('アップロードするファイルがありません');
+            return;
+        }
+
+        try {
+            let successCount = 0;
+            let failCount = 0;
+
+            for (const item of this.uploadQueue) {
+                try {
+                    const formData = new FormData();
+                    formData.append('photo', item.file);
+                    formData.append('projectId', projectId);
+                    formData.append('caption', item.caption || item.file.name);
+
+                    // カテゴリー情報を追加
+                    if (processType) formData.append('processType', processType);
+                    if (location) formData.append('location', location);
+                    if (workType) formData.append('workType', workType);
+
+                    const response = await fetch(`${API_BASE}/photos/upload`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        successCount++;
+                    } else {
+                        failCount++;
+                    }
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    failCount++;
+                }
+            }
+
+            alert(`アップロード完了\n成功: ${successCount}枚\n失敗: ${failCount}枚`);
+
+            // 写真一覧を更新
+            await this.loadPhotos();
+            this.renderPhotos();
+
+            // モーダルを閉じる
+            this.closeFileUploadModal();
+        } catch (error) {
+            console.error('Upload error:', error);
+            alert('アップロードに失敗しました: ' + error.message);
+        }
     }
 }
 

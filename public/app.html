@@ -555,8 +555,9 @@
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px;">
-                    <button class="btn btn-primary" onclick="app.showPDFSettingsModal()">📄 PDF</button>
+                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 16px;">
+                    <button class="btn btn-primary" onclick="app.showFileUploadModal()">📤 アップロード</button>
+                    <button class="btn btn-secondary" onclick="app.showPDFSettingsModal()">📄 PDF</button>
                     <button class="btn btn-secondary" onclick="app.exportPhotos('json')">📥 JSON</button>
                     <button class="btn btn-secondary" onclick="app.exportPhotos('csv')">📥 CSV</button>
                     <button class="btn btn-secondary" onclick="app.toggleSelectionMode()" id="selection-mode-btn">✓ 選択</button>
@@ -900,6 +901,116 @@
             </div>
         </div>
     </div>
+
+    <!-- Phase 7-1: ファイルアップロードモーダル -->
+    <div id="file-upload-modal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>📤 写真ファイルをアップロード</h2>
+            </div>
+            <div class="modal-body">
+                <!-- ドラッグ&ドロップエリア -->
+                <div id="drop-zone"
+                     ondrop="app.handleFileDrop(event)"
+                     ondragover="app.handleDragOver(event)"
+                     style="border: 2px dashed #667eea; border-radius: 12px; padding: 48px; text-align: center; background: #f5f7fa; margin-bottom: 24px; cursor: pointer;"
+                     onclick="document.getElementById('file-input').click()">
+                    <div style="font-size: 64px; margin-bottom: 16px;">📁</div>
+                    <h3 style="margin-bottom: 8px;">ファイルをドラッグ&ドロップ</h3>
+                    <p style="color: #666; margin-bottom: 16px;">または クリックしてファイルを選択</p>
+                    <input type="file" id="file-input" multiple accept="image/*" onchange="app.handleFileInput(event)" style="display: none;">
+                </div>
+
+                <!-- アップロード設定 -->
+                <div class="form-group">
+                    <label>案件 *</label>
+                    <select id="upload-project-select" required></select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label>📋 工程区分</label>
+                        <select id="upload-process-type">
+                            <option value="">選択なし</option>
+                            <option value="foundation">基礎</option>
+                            <option value="structure">躯体</option>
+                            <option value="finishing">仕上げ</option>
+                            <option value="completion">完成</option>
+                            <option value="inspection">検査</option>
+                            <option value="other">その他</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>🔧 工種</label>
+                        <select id="upload-work-type">
+                            <option value="">選択なし</option>
+                            <option value="architecture">建築</option>
+                            <option value="electrical">電気</option>
+                            <option value="plumbing">設備</option>
+                            <option value="civil">土木</option>
+                            <option value="landscape">外構</option>
+                            <option value="other">その他</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>📍 撮影箇所</label>
+                    <input type="text" id="upload-location" placeholder="例: A棟1階、外構東側">
+                </div>
+
+                <!-- プレビューエリア -->
+                <div style="margin-top: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h3>プレビュー (<span id="upload-count">0枚</span>)</h3>
+                    </div>
+                    <div id="upload-preview-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; max-height: 300px; overflow-y: auto;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📁</div>
+                            <p>ファイルをドラッグ&ドロップまたは選択してください</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeFileUploadModal()">キャンセル</button>
+                <button class="btn btn-primary" onclick="app.uploadFiles()">📤 アップロード開始</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .upload-preview-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .upload-preview-card img {
+            width: 100%;
+            aspect-ratio: 4/3;
+            object-fit: cover;
+        }
+
+        .upload-preview-info {
+            padding: 8px;
+        }
+
+        .upload-preview-info input {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        #drop-zone:hover {
+            background: #e8eaf6;
+            border-color: #5566d3;
+        }
+    </style>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="/app.js?v=2"></script>
