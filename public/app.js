@@ -58,6 +58,9 @@ class App {
         // ダークモード（Phase 7-6）
         this.darkMode = localStorage.getItem('darkMode') === 'true';
 
+        // プロジェクトテンプレート（Phase 7-2）
+        this.projectTemplates = this.loadTemplates();
+
         this.init();
     }
 
@@ -223,6 +226,7 @@ class App {
         document.getElementById('project-modal-title').textContent = '新しい案件を作成';
         document.getElementById('project-form').reset();
         this.currentProject = null;
+        this.updateTemplateSelect();
         this.openModal('project-modal');
     }
 
@@ -2516,6 +2520,108 @@ class App {
         if (toggleBtn) {
             toggleBtn.textContent = this.darkMode ? '☀️' : '🌙';
         }
+    }
+
+    // ===================
+    // Phase 7-2: プロジェクトテンプレート
+    // ===================
+
+    loadTemplates() {
+        const templates = localStorage.getItem('projectTemplates');
+        return templates ? JSON.parse(templates) : [];
+    }
+
+    saveTemplates() {
+        localStorage.setItem('projectTemplates', JSON.stringify(this.projectTemplates));
+    }
+
+    saveAsTemplate() {
+        const form = document.getElementById('project-form');
+        const formData = new FormData(form);
+
+        const templateName = prompt('テンプレート名を入力してください:');
+        if (!templateName) return;
+
+        const template = {
+            id: Date.now().toString(),
+            name: templateName,
+            description: formData.get('description') || '',
+            location: formData.get('location') || '',
+            status: formData.get('status') || 'planned',
+            createdAt: new Date().toISOString()
+        };
+
+        this.projectTemplates.push(template);
+        this.saveTemplates();
+
+        alert(`テンプレート「${templateName}」を保存しました`);
+        this.updateTemplateSelect();
+    }
+
+    loadTemplate(templateId) {
+        const template = this.projectTemplates.find(t => t.id === templateId);
+        if (!template) return;
+
+        const form = document.getElementById('project-form');
+        form.querySelector('[name="description"]').value = template.description;
+        form.querySelector('[name="location"]').value = template.location;
+        form.querySelector('[name="status"]').value = template.status;
+
+        alert(`テンプレート「${template.name}」を読み込みました`);
+    }
+
+    deleteTemplate(templateId) {
+        if (!confirm('このテンプレートを削除しますか？')) return;
+
+        this.projectTemplates = this.projectTemplates.filter(t => t.id !== templateId);
+        this.saveTemplates();
+        this.updateTemplateSelect();
+        alert('テンプレートを削除しました');
+    }
+
+    updateTemplateSelect() {
+        const select = document.getElementById('template-select');
+        if (!select) return;
+
+        select.innerHTML = '<option value="">テンプレートを選択...</option>';
+        this.projectTemplates.forEach(template => {
+            const option = document.createElement('option');
+            option.value = template.id;
+            option.textContent = template.name;
+            select.appendChild(option);
+        });
+    }
+
+    showTemplateManager() {
+        this.openModal('template-manager-modal');
+        this.renderTemplates();
+    }
+
+    closeTemplateManager() {
+        this.closeModal('template-manager-modal');
+    }
+
+    renderTemplates() {
+        const container = document.getElementById('templates-list');
+
+        if (this.projectTemplates.length === 0) {
+            container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📝</div><p>保存されたテンプレートはありません</p></div>';
+            return;
+        }
+
+        container.innerHTML = this.projectTemplates.map(template => `
+            <div class="card">
+                <h3>${this.escapeHtml(template.name)}</h3>
+                <div class="card-meta">
+                    <span>📍 ${this.escapeHtml(template.location)}</span>
+                    <span>📅 ${this.formatDate(template.createdAt)}</span>
+                </div>
+                ${template.description ? `<p>${this.escapeHtml(template.description)}</p>` : ''}
+                <div class="card-actions">
+                    <button class="btn btn-secondary" onclick="app.deleteTemplate('${template.id}')">🗑️ 削除</button>
+                </div>
+            </div>
+        `).join('');
     }
 }
 

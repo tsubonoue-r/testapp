@@ -721,6 +721,7 @@
                         <button class="btn btn-secondary" onclick="app.toggleArchivedProjects()">
                             <span id="archive-toggle-text">📦 アーカイブを表示</span>
                         </button>
+                        <button class="btn btn-secondary" onclick="app.showTemplateManager()" style="background: #9c27b0; color: white;">📝 テンプレート管理</button>
                         <button class="btn btn-primary" onclick="app.showCreateProjectModal()">➕ 新規案件</button>
                     </div>
                 </div>
@@ -829,6 +830,12 @@
             <div class="modal-body">
                 <form id="project-form">
                     <div class="form-group">
+                        <label>📝 テンプレートから読み込み</label>
+                        <select id="template-select" onchange="app.loadTemplate(this.value)">
+                            <option value="">-- テンプレートを選択 --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label>案件名 *</label>
                         <input type="text" name="name" required>
                     </div>
@@ -860,6 +867,7 @@
             </div>
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="app.closeModal('project-modal')">キャンセル</button>
+                <button class="btn btn-secondary" onclick="app.saveAsTemplate()" style="background: #9c27b0; color: white;">📝 テンプレート保存</button>
                 <button class="btn btn-primary" onclick="app.saveProject()">保存</button>
             </div>
         </div>
@@ -1185,6 +1193,26 @@
             border-color: #5566d3;
         }
     </style>
+
+    <!-- テンプレート管理モーダル -->
+    <div id="template-manager-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📝 テンプレート管理</h2>
+            </div>
+            <div class="modal-body">
+                <div id="templates-list" style="max-height: 400px; overflow-y: auto;">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📝</div>
+                        <p>保存されたテンプレートがありません</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeTemplateManager()">閉じる</button>
+            </div>
+        </div>
+    </div>
 
     <script src="/app.js"></script>
     <script>
