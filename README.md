@@ -133,3 +133,34 @@ MIT
 ---
 
 ✨ [Miyabi](https://github.com/ShunsukeHayashi/Miyabi)で生成
+
+## 📱 Lark メッセージング
+
+プロジェクトから直接Larkにメッセージを送信できます。
+
+### セットアップ
+
+`.env`ファイルに以下の設定が必要:
+```bash
+LARK_APP_ID=cli_xxxxx
+LARK_APP_SECRET=xxxxx
+LARK_USER_ID=xxxxx
+```
+
+### 使い方
+
+```bash
+# シンプルなメッセージ送信
+./send_lark.sh "こんにちは、テストメッセージです"
+
+# 複数行メッセージ
+./send_lark.sh "タイトル
+
+• 項目1
+• 項目2
+• 項目3"
+
+# ファイルから送信
+./send_lark.sh "$(cat message.txt)"
+```
+
