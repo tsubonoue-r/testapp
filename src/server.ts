@@ -9,6 +9,7 @@ import projectsRouter from './routes/projects.js';
 import signboardsRouter from './routes/signboards.js';
 import photosRouter from './routes/photos.js';
 import authRouter from './routes/auth.js';
+import larkRouter from './routes/lark.js';
 import { initializeDatabase } from './db/database.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -58,6 +59,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/projects', projectsRouter);
 app.use('/api/signboards', signboardsRouter);
 app.use('/api/photos', photosRouter);
+app.use('/api/lark', larkRouter);
 
 // 404ハンドラー
 app.use((req: Request, res: Response) => {
