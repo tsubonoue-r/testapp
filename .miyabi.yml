@@ -1,0 +1,16 @@
+github:
+  defaultPrivate: true
+  owner: tsubonoue-r
+  repo: testapp
+project:
+  gitignoreTemplate: Node
+  licenseTemplate: Apache-2.0
+labels: {}
+workflows:
+  autoLabel: true
+  autoReview: true
+  autoSync: true
+cli:
+  language: ja
+  theme: default
+  verboseErrors: true
