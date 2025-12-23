@@ -8,21 +8,25 @@ command = "tsc"
 # Environment variables
 [vars]
 ENVIRONMENT = "production"
+# JWT_SECRET = "your-secret-key-change-in-production"
+# LARK_APP_ID = ""
+# LARK_APP_SECRET = ""
+# LARK_BASE_APP_TOKEN = ""
+# LARK_BASE_TABLE_ID = ""
 
-# Node.js compatibility for Express
+# Node.js compatibility
 node_compat = true
 
 # Enable workers.dev subdomain
 workers_dev = true
 
-# D1 Database binding (for SQLite replacement)
-# Uncomment and configure when ready
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "testapp-db"
-# database_id = ""
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "testapp-db"
+database_id = "7e239cb1-7a59-475c-9fd1-91cc150f3113"
 
-# R2 bucket for file uploads
+# R2 bucket for file uploads (requires R2 enablement in dashboard)
 # [[r2_buckets]]
 # binding = "UPLOADS"
 # bucket_name = "testapp-uploads"
