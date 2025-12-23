@@ -1,4 +1,4 @@
-import { Photo, PhotoLocation, PhotoMetadata, ListResult } from '../types/index.js';
+import { Photo, PhotoLocation, PhotoMetadata, ListResult, PhotoProcessCategory, PhotoWorkTypeCategory } from '../types/index.js';
 import { PhotoModel } from '../models/Photo.js';
 
 /**
@@ -18,9 +18,9 @@ export class PhotoService {
     thumbnailPath?: string;
     caption?: string;
     category?: {
-      process?: string;
+      process?: PhotoProcessCategory;
       location?: string;
-      workType?: string;
+      workType?: PhotoWorkTypeCategory;
     };
     location?: PhotoLocation;
     metadata: PhotoMetadata;

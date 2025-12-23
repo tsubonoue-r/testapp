@@ -1,4 +1,4 @@
-import { Photo, PhotoLocation, PhotoMetadata } from '../types/index.js';
+import { Photo, PhotoLocation, PhotoMetadata, PhotoProcessCategory, PhotoWorkTypeCategory } from '../types/index.js';
 import { randomUUID } from 'crypto';
 
 /**
@@ -16,9 +16,9 @@ export class PhotoModel {
     thumbnailPath?: string;
     caption?: string;
     category?: {
-      process?: string;
+      process?: PhotoProcessCategory;
       location?: string;
-      workType?: string;
+      workType?: PhotoWorkTypeCategory;
     };
     location?: PhotoLocation;
     metadata: PhotoMetadata;

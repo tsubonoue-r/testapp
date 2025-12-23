@@ -21,7 +21,7 @@ const __dirname = path.dirname(__filename);
 initializeDatabase();
 
 const app: Express = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 // ミドルウェア
 app.use(cors());
