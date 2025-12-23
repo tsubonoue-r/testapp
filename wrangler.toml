@@ -27,6 +27,13 @@ database_name = "testapp-db"
 database_id = "7e239cb1-7a59-475c-9fd1-91cc150f3113"
 
 # R2 bucket for file uploads (requires R2 enablement in dashboard)
+# Uncomment after enabling R2 in Cloudflare Dashboard
 # [[r2_buckets]]
 # binding = "UPLOADS"
 # bucket_name = "testapp-uploads"
+
+# Static assets configuration (Workers Assets)
+# Serves files from public/ directory
+[assets]
+directory = "./public"
+binding = "ASSETS"

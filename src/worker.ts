@@ -39,59 +39,54 @@ app.get('/api/health', (c) => {
   });
 });
 
-// ルートパス
-app.get('/', (c) => {
-  return c.json({
-    message: '工事看板写真システム API',
-    version: '1.0.0',
-    endpoints: {
-      health: '/api/health',
-      auth: '/api/auth/*',
-      projects: '/api/projects/*',
-      signboards: '/api/signboards/*',
-      photos: '/api/photos/*',
-      lark: '/api/lark/*',
-    },
-    documentation: {
-      auth: {
-        register: 'POST /api/auth/register',
-        login: 'POST /api/auth/login',
-        me: 'GET /api/auth/me',
-        changePassword: 'POST /api/auth/change-password',
-        refresh: 'POST /api/auth/refresh',
-      },
-      projects: {
-        list: 'GET /api/projects',
-        get: 'GET /api/projects/:id',
-        create: 'POST /api/projects',
-        update: 'PUT /api/projects/:id',
-        updateStatus: 'PATCH /api/projects/:id/status',
-        delete: 'DELETE /api/projects/:id',
-        search: 'GET /api/projects/search/query?q=',
-      },
-      signboards: {
-        list: 'GET /api/signboards',
-        get: 'GET /api/signboards/:id',
-        create: 'POST /api/signboards',
-        update: 'PUT /api/signboards/:id',
-        delete: 'DELETE /api/signboards/:id',
-      },
-      photos: {
-        list: 'GET /api/photos',
-        get: 'GET /api/photos/:id',
-        upload: 'POST /api/photos/upload',
-        update: 'PUT /api/photos/:id',
-        delete: 'DELETE /api/photos/:id',
-      },
-      lark: {
-        config: 'GET /api/lark/config',
-        sync: 'POST /api/lark/sync/project/:projectId',
-        uploadPdf: 'POST /api/lark/upload/pdf',
-        status: 'GET /api/lark/status/:projectId',
-      },
-    },
-  });
-});
+/**
+ * MIME Type Helper
+ * ファイル拡張子から適切なContent-Typeを返す
+ */
+function getMimeType(path: string): string {
+  const ext = path.split('.').pop()?.toLowerCase();
+  const mimeTypes: Record<string, string> = {
+    html: 'text/html; charset=utf-8',
+    js: 'application/javascript; charset=utf-8',
+    json: 'application/json; charset=utf-8',
+    css: 'text/css; charset=utf-8',
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    gif: 'image/gif',
+    svg: 'image/svg+xml',
+    ico: 'image/x-icon',
+    webp: 'image/webp',
+    woff: 'font/woff',
+    woff2: 'font/woff2',
+    ttf: 'font/ttf',
+    txt: 'text/plain; charset=utf-8',
+    xml: 'application/xml',
+    pdf: 'application/pdf',
+  };
+  return mimeTypes[ext || ''] || 'application/octet-stream';
+}
+
+/**
+ * Cache Control Helper
+ * 静的ファイルのキャッシュ制御ヘッダーを生成
+ */
+function getCacheControl(path: string): string {
+  // Service worker and manifest should be revalidated
+  if (path.includes('service-worker.js') || path.includes('manifest.json')) {
+    return 'public, max-age=0, must-revalidate';
+  }
+  // Images and fonts can be cached for longer
+  if (path.match(/\.(png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf)$/)) {
+    return 'public, max-age=31536000, immutable';
+  }
+  // JS and CSS with versioning can be cached
+  if (path.match(/\.(js|css)$/)) {
+    return 'public, max-age=86400, must-revalidate';
+  }
+  // HTML should be revalidated
+  return 'public, max-age=0, must-revalidate';
+}
 
 // APIルート
 app.route('/api/auth', auth);
@@ -100,15 +95,101 @@ app.route('/api/signboards', signboards);
 app.route('/api/photos', photos);
 app.route('/api/lark', lark);
 
+/**
+ * Static File Serving
+ * Workers Assetsを使用して静的ファイルを配信
+ * 優先順位: API -> 静的ファイル -> index.html (SPA fallback)
+ */
+app.get('*', async (c) => {
+  // Skip if this is an API route (already handled)
+  if (c.req.path.startsWith('/api/')) {
+    return c.notFound();
+  }
+
+  // Get the requested path
+  let path = c.req.path;
+
+  // Root path -> serve index.html
+  if (path === '/') {
+    path = '/index.html';
+  }
+
+  try {
+    // Try to fetch from Workers Assets
+    if (c.env.ASSETS) {
+      const assetResponse = await c.env.ASSETS.fetch(new URL(path, c.req.url));
+
+      if (assetResponse.ok) {
+        // Clone the response to modify headers
+        const response = new Response(assetResponse.body, assetResponse);
+
+        // Set appropriate headers
+        response.headers.set('Content-Type', getMimeType(path));
+        response.headers.set('Cache-Control', getCacheControl(path));
+
+        // Add security headers
+        response.headers.set('X-Content-Type-Options', 'nosniff');
+        response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+        response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+        return response;
+      }
+    }
+
+    // If file not found and not a file request (no extension), try SPA fallback
+    if (!path.includes('.')) {
+      if (c.env.ASSETS) {
+        const indexResponse = await c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
+        if (indexResponse.ok) {
+          const response = new Response(indexResponse.body, indexResponse);
+          response.headers.set('Content-Type', 'text/html; charset=utf-8');
+          response.headers.set('Cache-Control', 'public, max-age=0, must-revalidate');
+          return response;
+        }
+      }
+    }
+
+    // File not found
+    return c.notFound();
+  } catch (error) {
+    console.error('Static file serving error:', error);
+    return c.notFound();
+  }
+});
+
 // 404ハンドラー
 app.notFound((c) => {
-  return c.json({
-    success: false,
-    error: {
-      code: 'NOT_FOUND',
-      message: `ルートが見つかりません: ${c.req.method} ${c.req.path}`,
-    },
-  }, 404);
+  // If this looks like an API request, return JSON
+  if (c.req.path.startsWith('/api/')) {
+    return c.json({
+      success: false,
+      error: {
+        code: 'NOT_FOUND',
+        message: `ルートが見つかりません: ${c.req.method} ${c.req.path}`,
+      },
+    }, 404);
+  }
+
+  // For other requests, return HTML 404 page
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="ja">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>404 Not Found</title>
+      <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; }
+        h1 { color: #667eea; }
+      </style>
+    </head>
+    <body>
+      <h1>404 Not Found</h1>
+      <p>お探しのページが見つかりませんでした。</p>
+      <a href="/">ホームに戻る</a>
+    </body>
+    </html>
+  `, 404);
 });
 
 // エラーハンドラー

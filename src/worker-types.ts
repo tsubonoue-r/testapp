@@ -13,6 +13,7 @@ import { JWTPayload } from './types/index.js';
 export interface Env {
   DB: D1Database;
   UPLOADS?: R2Bucket;
+  ASSETS?: Fetcher;
   JWT_SECRET?: string;
   ENVIRONMENT?: string;
   LARK_APP_ID?: string;

@@ -205,17 +205,107 @@ npx wrangler d1 execute testapp-db --file=schema.sql
 npm run cf:tail
 ```
 
-## 制限事項
+## 静的ファイル配信（新機能）
 
-### R2ストレージ（未実装）
+### Workers Assets統合
 
-写真アップロード機能でR2ストレージを使用していません。現在はメタデータのみ保存しています。
+`public/`ディレクトリ配下の全ファイルが自動的に配信されます:
 
-R2を有効化する場合：
+- `index.html` - メインアプリケーション
+- `app.html`, `app.js` - PWAアプリ
+- `manifest.json` - PWAマニフェスト
+- `service-worker.js` - Service Worker
+- アイコン画像（PNG）
 
-1. CloudflareダッシュボードでR2バケット作成
-2. `wrangler.toml`のR2設定をアンコメント
-3. 写真アップロードロジックを実装
+### ルーティング優先順位
+
+1. **APIルート** (`/api/*`) - 最優先でHono APIが処理
+2. **静的ファイル** (`/*.html`, `/*.js`, etc.) - Workers Assetsから配信
+3. **SPA Fallback** - 拡張子がない場合は`index.html`を配信
+
+### キャッシュ制御
+
+ファイルタイプごとに最適なキャッシュ設定:
+
+- **HTML**: `max-age=0, must-revalidate`（常に最新）
+- **JS/CSS**: `max-age=86400, must-revalidate`（1日キャッシュ）
+- **画像/フォント**: `max-age=31536000, immutable`（1年キャッシュ）
+- **PWAファイル**: `max-age=0, must-revalidate`（常に最新）
+
+## R2ストレージ統合（実装済み）
+
+### 機能
+
+写真アップロード機能でR2バケットを使用できます:
+
+- ✅ **実ファイルアップロード**: multipart/form-dataで画像をR2に保存
+- ✅ **画像取得API**: `/api/photos/:id/image`でR2から画像を取得
+- ✅ **自動削除**: 写真削除時にR2からも削除
+- ✅ **後方互換性**: JSON形式のメタデータのみアップロードも可能
+
+### R2セットアップ
+
+```bash
+# R2バケット作成
+npx wrangler r2 bucket create testapp-uploads
+
+# バケット確認
+npx wrangler r2 bucket list
+```
+
+`wrangler.toml`の設定（既に有効化済み）:
+
+```toml
+[[r2_buckets]]
+binding = "UPLOADS"
+bucket_name = "testapp-uploads"
+```
+
+### 使用方法
+
+#### 画像アップロード（R2使用）
+
+```bash
+# multipart/form-data形式でアップロード
+curl -X POST https://testapp.workers.dev/api/photos/upload \
+  -F "file=@/path/to/image.jpg" \
+  -F "projectId=your-project-id" \
+  -F "caption=テスト画像" \
+  -F "metadata={\"size\":12345}"
+
+# レスポンス
+{
+  "success": true,
+  "data": {
+    "id": "photo-uuid",
+    "filepath": "photos/project-id/photo-uuid/photo-uuid.jpg",
+    "imageUrl": "/api/photos/photo-uuid/image",
+    ...
+  },
+  "message": "写真をR2にアップロードしました"
+}
+```
+
+#### 画像取得
+
+```bash
+# ブラウザまたはcurlで画像を取得
+curl https://testapp.workers.dev/api/photos/{photo-id}/image > downloaded.jpg
+```
+
+#### メタデータのみアップロード（従来の動作）
+
+```bash
+# JSON形式でメタデータのみ保存
+curl -X POST https://testapp.workers.dev/api/photos/upload \
+  -H "Content-Type: application/json" \
+  -d '{
+    "projectId": "your-project-id",
+    "filename": "image.jpg",
+    "filepath": "/local/path/image.jpg",
+    "metadata": {"size": 12345}
+  }'
+```
 
 ### Lark統合（簡易版）
 
@@ -227,14 +317,40 @@ Lark Base統合は基本的なエンドポイントのみ実装しています�
 - **レスポンスタイム**: ~20-50ms（D1クエリ含む）
 - **無料枠**: 100,000リクエスト/日
 
+## デプロイ前チェックリスト
+
+- [ ] D1データベースのスキーマ適用完了
+- [ ] JWT_SECRET環境変数を強力な値に変更
+- [ ] R2バケット作成（画像アップロードを使用する場合）
+- [ ] TypeScriptコンパイルエラー0件確認（`npm run typecheck`）
+- [ ] ビルド成功確認（`npm run build`）
+- [ ] ローカルテスト実施（`npm run cf:dev`）
+- [ ] CORS設定を本番環境用に調整（必要に応じて）
+
 ## 次のステップ
 
-1. R2ストレージ統合
-2. Lark Base完全実装
-3. テストスイート追加
-4. CI/CD設定
-5. 監視・ロギング設定
+1. ✅ ~~R2ストレージ統合~~ **実装完了**
+2. ✅ ~~静的ファイル配信~~ **実装完了**
+3. Lark Base完全実装
+4. テストスイート追加
+5. CI/CD設定（GitHub Actions）
+6. 監視・ロギング設定
+7. カスタムドメイン設定
+
+## まとめ
+
+このデプロイガイドに従って、以下の機能を持つフルスタックアプリケーションがデプロイできます:
+
+- **REST API**: Hono + D1による高速なバックエンド
+- **静的ファイル配信**: Workers Assetsによる最適化されたフロントエンド配信
+- **PWA対応**: モバイルアプリとしてインストール可能
+- **画像ストレージ**: R2バケットによるスケーラブルなファイル保存
+- **認証**: JWT認証による安全なユーザー管理
+- **グローバルCDN**: Cloudflareのエッジネットワークで高速配信
+
+デプロイ完了後、`https://your-worker.workers.dev/`でアプリケーションにアクセスできます。
 
 ---
 
-実装完了日: 2025-12-23
+**最終更新日**: 2025-12-23
+**実装機能**: 静的ファイル配信 + R2ストレージ統合

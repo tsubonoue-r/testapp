@@ -122,98 +122,217 @@ photos.get('/:id', async (c) => {
 
 /**
  * POST /api/photos/upload
- * 写真をアップロード
- * 注: R2が未設定のため、メタデータのみ保存
+ * 写真をアップロード (R2バケット対応)
+ *
+ * Request Body:
+ * - JSON形式の場合: メタデータのみ保存 (従来の動作)
+ * - multipart/form-data形式の場合: 実際の画像ファイルをR2に保存
  */
 photos.post('/upload', async (c) => {
   try {
-    const body = await c.req.json<{
-      projectId: string;
-      signboardId?: string;
-      filename: string;
-      filepath: string;
-      caption?: string;
-      category?: any;
-      location?: any;
-      metadata: any;
-      takenAt?: string;
-    }>();
+    const contentType = c.req.header('content-type') || '';
 
-    const {
-      projectId,
-      signboardId,
-      filename,
-      filepath,
-      caption,
-      category,
-      location,
-      metadata,
-      takenAt,
-    } = body;
+    // Check if this is a multipart upload (actual file)
+    if (contentType.includes('multipart/form-data')) {
+      // Handle actual file upload to R2
+      if (!c.env.UPLOADS) {
+        return c.json({
+          success: false,
+          error: {
+            code: 'R2_NOT_CONFIGURED',
+            message: 'R2バケットが設定されていません。wrangler.tomlでUPLOADSバインディングを有効にしてください。',
+          },
+        }, 503);
+      }
 
-    // バリデーション
-    if (!projectId || !filename || !filepath || !metadata) {
-      return c.json({
-        success: false,
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'プロジェクトID、ファイル名、ファイルパス、メタデータは必須です',
+      const formData = await c.req.formData();
+      const file = formData.get('file') as File | null;
+      const projectId = formData.get('projectId') as string;
+      const signboardId = formData.get('signboardId') as string | null;
+      const caption = formData.get('caption') as string | null;
+      const locationStr = formData.get('location') as string | null;
+      const metadataStr = formData.get('metadata') as string | null;
+      const takenAt = formData.get('takenAt') as string | null;
+
+      // Validation
+      if (!file || !projectId) {
+        return c.json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'ファイルとプロジェクトIDは必須です',
+          },
+        }, 400);
+      }
+
+      // Verify project exists
+      const project = await c.env.DB.prepare(
+        'SELECT id FROM projects WHERE id = ?'
+      ).bind(projectId).first();
+
+      if (!project) {
+        return c.json({
+          success: false,
+          error: {
+            code: 'PROJECT_NOT_FOUND',
+            message: 'プロジェクトが見つかりません',
+          },
+        }, 404);
+      }
+
+      // Generate unique ID for the photo
+      const id = crypto.randomUUID();
+      const now = new Date().toISOString();
+
+      // Generate R2 key: photos/{projectId}/{id}/{filename}
+      const fileExtension = file.name.split('.').pop() || 'jpg';
+      const r2Key = `photos/${projectId}/${id}/${id}.${fileExtension}`;
+
+      // Upload to R2
+      const arrayBuffer = await file.arrayBuffer();
+      await c.env.UPLOADS.put(r2Key, arrayBuffer, {
+        httpMetadata: {
+          contentType: file.type || 'image/jpeg',
         },
-      }, 400);
-    }
-
-    // プロジェクトが存在するか確認
-    const project = await c.env.DB.prepare(
-      'SELECT id FROM projects WHERE id = ?'
-    ).bind(projectId).first();
-
-    if (!project) {
-      return c.json({
-        success: false,
-        error: {
-          code: 'PROJECT_NOT_FOUND',
-          message: 'プロジェクトが見つかりません',
+        customMetadata: {
+          photoId: id,
+          projectId,
+          uploadedAt: now,
         },
-      }, 404);
+      });
+
+      // Parse location and metadata
+      const location = locationStr ? JSON.parse(locationStr) : null;
+      const metadata = metadataStr ? JSON.parse(metadataStr) : {
+        size: file.size,
+        type: file.type,
+        originalFilename: file.name,
+      };
+
+      // Save to database
+      await c.env.DB.prepare(
+        'INSERT INTO photos (id, project_id, signboard_id, filename, filepath, caption, location_json, metadata_json, taken_at, uploaded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(
+        id,
+        projectId,
+        signboardId || null,
+        file.name,
+        r2Key, // Store R2 key as filepath
+        caption || null,
+        location ? JSON.stringify(location) : null,
+        JSON.stringify(metadata),
+        takenAt || now,
+        now
+      ).run();
+
+      // Get created photo
+      const row = await c.env.DB.prepare(
+        'SELECT * FROM photos WHERE id = ?'
+      ).bind(id).first() as any;
+
+      const photo = {
+        ...row,
+        location: row.location_json ? JSON.parse(row.location_json) : undefined,
+        metadata: JSON.parse(row.metadata_json),
+        imageUrl: `/api/photos/${id}/image`, // URL to retrieve the image
+      };
+
+      return c.json({
+        success: true,
+        data: photo,
+        message: '写真をR2にアップロードしました',
+      }, 201);
+
+    } else {
+      // Handle metadata-only upload (JSON format - backward compatibility)
+      const body = await c.req.json<{
+        projectId: string;
+        signboardId?: string;
+        filename: string;
+        filepath: string;
+        caption?: string;
+        category?: any;
+        location?: any;
+        metadata: any;
+        takenAt?: string;
+      }>();
+
+      const {
+        projectId,
+        signboardId,
+        filename,
+        filepath,
+        caption,
+        category,
+        location,
+        metadata,
+        takenAt,
+      } = body;
+
+      // Validation
+      if (!projectId || !filename || !filepath || !metadata) {
+        return c.json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'プロジェクトID、ファイル名、ファイルパス、メタデータは必須です',
+          },
+        }, 400);
+      }
+
+      // Verify project exists
+      const project = await c.env.DB.prepare(
+        'SELECT id FROM projects WHERE id = ?'
+      ).bind(projectId).first();
+
+      if (!project) {
+        return c.json({
+          success: false,
+          error: {
+            code: 'PROJECT_NOT_FOUND',
+            message: 'プロジェクトが見つかりません',
+          },
+        }, 404);
+      }
+
+      // Create new photo record
+      const id = crypto.randomUUID();
+      const now = new Date().toISOString();
+      const locationJson = location ? JSON.stringify(location) : null;
+      const metadataJson = JSON.stringify(metadata);
+
+      await c.env.DB.prepare(
+        'INSERT INTO photos (id, project_id, signboard_id, filename, filepath, caption, location_json, metadata_json, taken_at, uploaded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(
+        id,
+        projectId,
+        signboardId || null,
+        filename,
+        filepath,
+        caption || null,
+        locationJson,
+        metadataJson,
+        takenAt || now,
+        now
+      ).run();
+
+      // Get created photo
+      const row = await c.env.DB.prepare(
+        'SELECT * FROM photos WHERE id = ?'
+      ).bind(id).first() as any;
+
+      const photo = {
+        ...row,
+        location: row.location_json ? JSON.parse(row.location_json) : undefined,
+        metadata: JSON.parse(row.metadata_json),
+      };
+
+      return c.json({
+        success: true,
+        data: photo,
+        message: '写真メタデータを保存しました',
+      }, 201);
     }
-
-    // 新しい写真を作成
-    const id = crypto.randomUUID();
-    const now = new Date().toISOString();
-    const locationJson = location ? JSON.stringify(location) : null;
-    const metadataJson = JSON.stringify(metadata);
-
-    await c.env.DB.prepare(
-      'INSERT INTO photos (id, project_id, signboard_id, filename, filepath, caption, location_json, metadata_json, taken_at, uploaded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).bind(
-      id,
-      projectId,
-      signboardId || null,
-      filename,
-      filepath,
-      caption || null,
-      locationJson,
-      metadataJson,
-      takenAt || now,
-      now
-    ).run();
-
-    // 作成した写真を取得
-    const row = await c.env.DB.prepare(
-      'SELECT * FROM photos WHERE id = ?'
-    ).bind(id).first() as any;
-
-    const photo = {
-      ...row,
-      location: row.location_json ? JSON.parse(row.location_json) : undefined,
-      metadata: JSON.parse(row.metadata_json),
-    };
-
-    return c.json({
-      success: true,
-      data: photo,
-      message: '写真をアップロードしました',
-    }, 201);
   } catch (error) {
     return c.json({
       success: false,
@@ -311,17 +430,87 @@ photos.put('/:id', async (c) => {
 });
 
 /**
+ * GET /api/photos/:id/image
+ * R2バケットから画像を取得
+ */
+photos.get('/:id/image', async (c) => {
+  try {
+    const id = c.req.param('id');
+
+    // Get photo record from database
+    const row = await c.env.DB.prepare(
+      'SELECT * FROM photos WHERE id = ?'
+    ).bind(id).first() as any;
+
+    if (!row) {
+      return c.json({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: '写真が見つかりません',
+        },
+      }, 404);
+    }
+
+    // Check if R2 is configured
+    if (!c.env.UPLOADS) {
+      return c.json({
+        success: false,
+        error: {
+          code: 'R2_NOT_CONFIGURED',
+          message: 'R2バケットが設定されていません',
+        },
+      }, 503);
+    }
+
+    // Get image from R2
+    const r2Object = await c.env.UPLOADS.get(row.filepath);
+
+    if (!r2Object) {
+      return c.json({
+        success: false,
+        error: {
+          code: 'IMAGE_NOT_FOUND',
+          message: 'R2バケットに画像が見つかりません',
+        },
+      }, 404);
+    }
+
+    // Return image with appropriate headers
+    const headers = new Headers();
+    headers.set('Content-Type', r2Object.httpMetadata?.contentType || 'image/jpeg');
+    headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+    headers.set('ETag', r2Object.httpEtag);
+
+    // Add CORS headers
+    headers.set('Access-Control-Allow-Origin', '*');
+
+    return new Response(r2Object.body, {
+      headers,
+    });
+  } catch (error) {
+    return c.json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: error instanceof Error ? error.message : '不明なエラー',
+      },
+    }, 500);
+  }
+});
+
+/**
  * DELETE /api/photos/:id
- * 写真を削除
+ * 写真を削除 (R2バケットからも削除)
  */
 photos.delete('/:id', async (c) => {
   try {
     const id = c.req.param('id');
 
-    // 写真が存在するか確認
+    // Get photo record
     const existing = await c.env.DB.prepare(
       'SELECT * FROM photos WHERE id = ?'
-    ).bind(id).first();
+    ).bind(id).first() as any;
 
     if (!existing) {
       return c.json({
@@ -333,7 +522,17 @@ photos.delete('/:id', async (c) => {
       }, 404);
     }
 
-    // 写真を削除
+    // Delete from R2 if it exists and R2 is configured
+    if (c.env.UPLOADS && existing.filepath) {
+      try {
+        await c.env.UPLOADS.delete(existing.filepath);
+      } catch (error) {
+        console.warn('Failed to delete from R2:', error);
+        // Continue even if R2 deletion fails
+      }
+    }
+
+    // Delete from database
     await c.env.DB.prepare(
       'DELETE FROM photos WHERE id = ?'
     ).bind(id).run();
