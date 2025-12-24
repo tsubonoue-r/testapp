@@ -11,76 +11,273 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
     <link rel="apple-touch-icon" href="/icon-192.png">
     <title>工事看板写真システム</title>
+
+    <!-- jsPDF for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
     <style>
+        /* ===================================
+           Base Styles
+           =================================== */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        :root {
+            --primary-color: #667eea;
+            --primary-dark: #764ba2;
+            --secondary-color: #f5f7fa;
+            --text-color: #2c3e50;
+            --text-light: #666;
+            --border-color: #e0e0e0;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --header-height: 64px;
+            --tab-height: 56px;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', sans-serif;
-            background: #f5f5f5;
-            color: #333;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+            background: var(--secondary-color);
+            color: var(--text-color);
+            transition: background 0.3s, color 0.3s;
+            line-height: 1.6;
         }
 
+        /* ===================================
+           Dark Mode
+           =================================== */
+        body.dark-mode {
+            --secondary-color: #1a1a1a;
+            --text-color: #e0e0e0;
+            --text-light: #a0aec0;
+            --border-color: #4a5568;
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .app,
+        body.dark-mode .content {
+            background: #1a1a1a;
+        }
+
+        body.dark-mode header {
+            background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+        }
+
+        body.dark-mode .tabs {
+            background: #2d3748;
+        }
+
+        body.dark-mode .tab.active {
+            color: #90cdf4;
+            border-bottom-color: #90cdf4;
+        }
+
+        body.dark-mode .card,
+        body.dark-mode .modal-content {
+            background: #2d3748;
+            border-color: #4a5568;
+        }
+
+        body.dark-mode .form-group input,
+        body.dark-mode .form-group textarea,
+        body.dark-mode .form-group select {
+            background: #1a1a1a;
+            color: #e0e0e0;
+            border-color: #4a5568;
+        }
+
+        body.dark-mode .sidebar {
+            background: #2d3748;
+            border-right-color: #4a5568;
+        }
+
+        body.dark-mode .sidebar-item:hover {
+            background: #4a5568;
+        }
+
+        /* ===================================
+           Mobile-First Layout (Default)
+           =================================== */
         .app {
-            max-width: 428px;
-            margin: 0 auto;
-            background: white;
+            width: 100%;
             min-height: 100vh;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            padding-bottom: 80px;
+            background: white;
+            position: relative;
         }
 
+        /* Header */
         header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
             color: white;
             padding: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-md);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            font-size: 28px;
         }
 
         header h1 {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 600;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
 
         header p {
-            font-size: 13px;
+            font-size: 12px;
             opacity: 0.9;
         }
 
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .header-btn {
+            padding: 8px 12px;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .header-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* Hamburger Menu (Mobile) */
+        .hamburger {
+            display: block;
+            width: 28px;
+            height: 28px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .hamburger span {
+            display: block;
+            width: 100%;
+            height: 2px;
+            background: white;
+            margin: 4px 0;
+            transition: all 0.3s;
+        }
+
+        /* Sidebar (Hidden on mobile) */
+        .sidebar {
+            display: none;
+            position: fixed;
+            left: 0;
+            top: var(--header-height);
+            width: 280px;
+            height: calc(100vh - var(--header-height));
+            background: white;
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            z-index: 90;
+            transform: translateX(-100%);
+            transition: transform 0.3s;
+        }
+
+        .sidebar.active {
+            transform: translateX(0);
+        }
+
+        .sidebar-section {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-light);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .sidebar-item {
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-bottom: 4px;
+        }
+
+        .sidebar-item:hover {
+            background: var(--secondary-color);
+        }
+
+        .sidebar-item.active {
+            background: rgba(102, 126, 234, 0.1);
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        /* Tabs */
         .tabs {
             display: flex;
             background: white;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid var(--border-color);
             position: sticky;
-            top: 0;
-            z-index: 10;
+            top: var(--header-height);
+            z-index: 80;
+            overflow-x: auto;
         }
 
         .tab {
             flex: 1;
+            min-width: 80px;
             padding: 16px;
             text-align: center;
             background: none;
             border: none;
             font-size: 14px;
-            color: #666;
+            color: var(--text-light);
             cursor: pointer;
             transition: all 0.3s;
             border-bottom: 2px solid transparent;
+            white-space: nowrap;
         }
 
         .tab.active {
-            color: #667eea;
-            border-bottom-color: #667eea;
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
             font-weight: 600;
         }
 
+        /* Content */
         .content {
             padding: 16px;
+            background: var(--secondary-color);
+            min-height: calc(100vh - var(--header-height) - var(--tab-height));
         }
 
         .section {
@@ -91,30 +288,50 @@
             display: block;
         }
 
+        /* Cards */
         .card {
             background: white;
-            border-radius: 12px;
+            border-radius: var(--radius-md);
             padding: 16px;
             margin-bottom: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            border: 1px solid #e0e0e0;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
 
         .card h3 {
             font-size: 16px;
             margin-bottom: 8px;
-            color: #333;
+            color: var(--text-color);
         }
 
         .card-meta {
             display: flex;
             gap: 12px;
             font-size: 13px;
-            color: #666;
+            color: var(--text-light);
             margin-bottom: 8px;
             flex-wrap: wrap;
         }
 
+        .card-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .card-actions button {
+            flex: 1;
+            padding: 8px;
+            font-size: 14px;
+        }
+
+        /* Badge */
         .badge {
             display: inline-block;
             padding: 4px 12px;
@@ -138,23 +355,30 @@
             color: #388e3c;
         }
 
+        /* Photo Grid */
         .photo-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            margin-top: 12px;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
         }
 
         .photo-item {
             aspect-ratio: 1;
             background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             display: flex;
             align-items: center;
             justify-content: center;
             color: #999;
             font-size: 32px;
             overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .photo-item:hover {
+            transform: scale(1.05);
         }
 
         .photo-item img {
@@ -163,30 +387,37 @@
             object-fit: cover;
         }
 
+        /* Buttons */
         .btn {
             width: 100%;
-            padding: 16px;
+            padding: 14px;
             border: none;
-            border-radius: 12px;
-            font-size: 16px;
+            border-radius: var(--radius-md);
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
             margin-top: 8px;
+            touch-action: manipulation;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
             color: white;
         }
 
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
         .btn-primary:active {
-            transform: translateY(2px);
+            transform: translateY(0);
         }
 
         .btn-secondary {
-            background: #f5f5f5;
-            color: #333;
+            background: var(--secondary-color);
+            color: var(--text-color);
         }
 
         .btn-danger {
@@ -194,25 +425,15 @@
             color: white;
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 48px 16px;
-            color: #999;
-        }
-
-        .empty-state-icon {
-            font-size: 64px;
-            margin-bottom: 16px;
-        }
-
+        /* FAB (Floating Action Button) */
         .fab {
             position: fixed;
             bottom: 24px;
-            right: max(calc((100vw - 428px) / 2 + 24px), 24px);
+            right: 24px;
             width: 56px;
             height: 56px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
             color: white;
             border: none;
             font-size: 24px;
@@ -222,11 +443,15 @@
             z-index: 100;
         }
 
-        .fab:active {
-            transform: scale(0.9);
+        .fab:hover {
+            transform: scale(1.1);
         }
 
-        /* モーダル */
+        .fab:active {
+            transform: scale(0.95);
+        }
+
+        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -238,6 +463,7 @@
             z-index: 1000;
             align-items: center;
             justify-content: center;
+            backdrop-filter: blur(4px);
         }
 
         .modal.active {
@@ -246,17 +472,18 @@
 
         .modal-content {
             background: white;
-            max-width: 400px;
+            max-width: 500px;
             width: 90%;
-            border-radius: 16px;
+            border-radius: var(--radius-lg);
             overflow: hidden;
             max-height: 90vh;
             overflow-y: auto;
+            box-shadow: var(--shadow-lg);
         }
 
         .modal-header {
             padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
             color: white;
         }
 
@@ -277,7 +504,7 @@
             margin-bottom: 8px;
             font-size: 14px;
             font-weight: 500;
-            color: #333;
+            color: var(--text-color);
         }
 
         .form-group input,
@@ -285,10 +512,18 @@
         .form-group select {
             width: 100%;
             padding: 12px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
             font-size: 14px;
             font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
         }
 
         .form-group textarea {
@@ -306,13 +541,13 @@
             flex: 1;
         }
 
-        /* カメラUI */
+        /* Camera UI */
         .camera-container {
             position: relative;
             width: 100%;
             aspect-ratio: 4/3;
             background: #000;
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             overflow: hidden;
             margin-bottom: 16px;
         }
@@ -337,68 +572,435 @@
         .camera-btn {
             padding: 12px 24px;
             border: none;
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             font-size: 16px;
             cursor: pointer;
-            background: #667eea;
+            background: var(--primary-color);
             color: white;
+            transition: all 0.3s;
         }
 
+        .camera-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 48px 16px;
+            color: var(--text-light);
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        /* Loading */
         .loading {
             text-align: center;
             padding: 20px;
-            color: #666;
+            color: var(--text-light);
         }
 
-        .card-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 12px;
+        /* Dashboard Stats */
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
         }
 
-        .card-actions button {
-            flex: 1;
-            padding: 8px;
-            font-size: 14px;
+        .stat-card {
+            background: white;
+            padding: 16px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-light);
+        }
+
+        /* ===================================
+           Tablet Layout (768px - 1023px)
+           =================================== */
+        @media (min-width: 768px) {
+            :root {
+                --header-height: 72px;
+            }
+
+            .app {
+                max-width: 100%;
+            }
+
+            header {
+                padding: 20px 32px;
+            }
+
+            header h1 {
+                font-size: 22px;
+            }
+
+            header p {
+                font-size: 14px;
+            }
+
+            .logo {
+                font-size: 36px;
+            }
+
+            .hamburger {
+                display: none;
+            }
+
+            .sidebar {
+                display: block;
+                transform: translateX(0);
+            }
+
+            .content {
+                margin-left: 280px;
+                padding: 24px;
+            }
+
+            .tabs {
+                margin-left: 280px;
+            }
+
+            .photo-grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 16px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .fab {
+                right: 32px;
+                bottom: 32px;
+                width: 64px;
+                height: 64px;
+                font-size: 28px;
+            }
+
+            .modal-content {
+                max-width: 600px;
+            }
+
+            .dashboard-stats {
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                gap: 16px;
+            }
+        }
+
+        /* ===================================
+           Desktop Layout (1024px+)
+           =================================== */
+        @media (min-width: 1024px) {
+            :root {
+                --header-height: 80px;
+            }
+
+            .app {
+                max-width: 100%;
+            }
+
+            header {
+                padding: 24px 48px;
+            }
+
+            header h1 {
+                font-size: 24px;
+            }
+
+            .logo {
+                font-size: 40px;
+            }
+
+            .sidebar {
+                width: 320px;
+            }
+
+            .content {
+                margin-left: 320px;
+                padding: 32px;
+                max-width: calc(100vw - 320px);
+            }
+
+            .tabs {
+                margin-left: 320px;
+            }
+
+            .photo-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 20px;
+            }
+
+            .card {
+                padding: 24px;
+            }
+
+            .card:hover {
+                transform: translateY(-4px);
+            }
+
+            .btn:hover {
+                transform: translateY(-2px);
+            }
+
+            .fab {
+                right: 48px;
+                bottom: 48px;
+            }
+
+            .modal-content {
+                max-width: 700px;
+            }
+
+            .dashboard-stats {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 20px;
+            }
+
+            /* Desktop-specific enhancements */
+            .header-btn {
+                font-size: 14px;
+                padding: 10px 16px;
+            }
+
+            .form-group input,
+            .form-group textarea,
+            .form-group select {
+                padding: 14px;
+            }
+        }
+
+        /* ===================================
+           Large Desktop (1440px+)
+           =================================== */
+        @media (min-width: 1440px) {
+            .content {
+                max-width: 1400px;
+                margin-left: auto;
+                margin-right: auto;
+                padding: 40px;
+            }
+
+            .tabs {
+                margin-left: 0;
+                max-width: 1400px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .sidebar {
+                left: calc((100vw - 1400px) / 2 - 320px);
+            }
+        }
+
+        /* ===================================
+           Touch Optimization (Mobile)
+           =================================== */
+        @media (max-width: 767px) {
+            /* Larger tap targets for mobile */
+            .btn,
+            .tab,
+            .card-actions button {
+                min-height: 44px;
+            }
+
+            .header-btn {
+                min-height: 36px;
+            }
+
+            /* Prevent text selection on buttons */
+            .btn, .tab, .header-btn, .fab {
+                -webkit-tap-highlight-color: transparent;
+                user-select: none;
+            }
+
+            /* Mobile-specific spacing */
+            .card {
+                margin-bottom: 16px;
+            }
+
+            /* Hide hover effects on touch devices */
+            .card:hover {
+                transform: none;
+            }
+        }
+
+        /* ===================================
+           Print Styles
+           =================================== */
+        @media print {
+            header,
+            .tabs,
+            .fab,
+            .modal,
+            .sidebar {
+                display: none !important;
+            }
+
+            .content {
+                margin: 0;
+                padding: 0;
+            }
+
+            .card {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+        }
+
+        /* ===================================
+           Accessibility
+           =================================== */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+
+        /* Focus visible for keyboard navigation */
+        *:focus-visible {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
         }
     </style>
 </head>
 <body>
     <div class="app">
         <header>
-            <h1>📸 工事看板写真システム</h1>
-            <p id="header-subtitle">案件と写真を簡単管理</p>
+            <div class="header-left">
+                <button class="hamburger" onclick="app.toggleSidebar()" aria-label="Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div class="logo">📸</div>
+                <div>
+                    <h1>工事看板写真システム</h1>
+                    <p id="header-subtitle">案件と写真を簡単管理</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="header-btn" onclick="app.toggleDarkMode()" title="ダークモード切替">🌙</button>
+                <button class="header-btn" onclick="app.showHelp()" title="ヘルプ">❓</button>
+            </div>
         </header>
 
+        <!-- Sidebar (Tablet/Desktop) -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">ダッシュボード</div>
+                <div class="sidebar-item active" onclick="app.showDashboard()">
+                    📊 概要
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">案件管理</div>
+                <div class="sidebar-item" onclick="app.switchTab('projects')">
+                    📁 全案件
+                </div>
+                <div class="sidebar-item" onclick="app.filterProjects('in_progress')">
+                    🚧 進行中
+                </div>
+                <div class="sidebar-item" onclick="app.filterProjects('completed')">
+                    ✅ 完了
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">写真管理</div>
+                <div class="sidebar-item" onclick="app.switchTab('photos')">
+                    🖼️ 全写真
+                </div>
+                <div class="sidebar-item" onclick="app.showRecentPhotos()">
+                    🆕 最近の写真
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">設定</div>
+                <div class="sidebar-item" onclick="app.exportData()">
+                    💾 データエクスポート
+                </div>
+            </div>
+        </aside>
+
         <div class="tabs">
-            <button class="tab active" data-tab="projects">案件</button>
-            <button class="tab" data-tab="signboards">看板</button>
-            <button class="tab" data-tab="photos">写真</button>
+            <button class="tab active" data-tab="dashboard" onclick="app.switchTab('dashboard')">
+                <span class="tab-icon">📊</span> ダッシュボード
+            </button>
+            <button class="tab" data-tab="projects" onclick="app.switchTab('projects')">
+                <span class="tab-icon">📁</span> 案件
+            </button>
+            <button class="tab" data-tab="signboards" onclick="app.switchTab('signboards')">
+                <span class="tab-icon">🪧</span> 看板
+            </button>
+            <button class="tab" data-tab="photos" onclick="app.switchTab('photos')">
+                <span class="tab-icon">📷</span> 写真
+            </button>
         </div>
 
         <div class="content">
-            <!-- 案件セクション -->
-            <div id="projects" class="section active">
+            <!-- Dashboard Section -->
+            <div id="dashboard" class="section active">
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-projects">0</div>
+                        <div class="stat-label">案件数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-signboards">0</div>
+                        <div class="stat-label">看板数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-photos">0</div>
+                        <div class="stat-label">写真数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-active">0</div>
+                        <div class="stat-label">進行中</div>
+                    </div>
+                </div>
+                <h2 style="margin-bottom: 16px;">最近のアクティビティ</h2>
+                <div id="recent-activity"></div>
+            </div>
+
+            <!-- Projects Section -->
+            <div id="projects" class="section">
                 <div id="projects-list"></div>
                 <button class="btn btn-primary" onclick="app.showCreateProjectModal()">➕ 新しい案件を作成</button>
             </div>
 
-            <!-- 看板セクション -->
+            <!-- Signboards Section -->
             <div id="signboards" class="section">
                 <div id="signboards-list"></div>
                 <button class="btn btn-primary" onclick="app.showCreateSignboardModal()">➕ 新しい看板を作成</button>
             </div>
 
-            <!-- 写真セクション -->
+            <!-- Photos Section -->
             <div id="photos" class="section">
                 <div id="photos-list"></div>
             </div>
         </div>
 
-        <button class="fab" onclick="app.showCameraModal()">📸</button>
+        <button class="fab" onclick="app.showCameraModal()" title="写真を撮影">📸</button>
     </div>
 
-    <!-- 案件作成/編集モーダル -->
+    <!-- Project Modal -->
     <div id="project-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -443,7 +1045,7 @@
         </div>
     </div>
 
-    <!-- 看板作成/編集モーダル -->
+    <!-- Signboard Modal -->
     <div id="signboard-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -488,7 +1090,7 @@
         </div>
     </div>
 
-    <!-- カメラモーダル -->
+    <!-- Camera Modal -->
     <div id="camera-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -517,7 +1119,87 @@
         </div>
     </div>
 
-    <script src="/app.js?v=2"></script>
-    <script src="/pwa-init.js?v=2"></script>
+    <script src="/app.js?v=3"></script>
+    <script>
+        // Device detection and responsive enhancements
+        class ResponsiveUI {
+            constructor() {
+                this.currentDevice = this.detectDevice();
+                this.init();
+            }
+
+            detectDevice() {
+                const width = window.innerWidth;
+                if (width < 768) return 'mobile';
+                if (width < 1024) return 'tablet';
+                return 'desktop';
+            }
+
+            init() {
+                this.applyDeviceSpecificSettings();
+                window.addEventListener('resize', () => {
+                    const newDevice = this.detectDevice();
+                    if (newDevice !== this.currentDevice) {
+                        this.currentDevice = newDevice;
+                        this.applyDeviceSpecificSettings();
+                    }
+                });
+
+                // Log device info
+                console.log('📱 Device detected:', this.currentDevice);
+                console.log('🖥️ Screen:', window.innerWidth, 'x', window.innerHeight);
+            }
+
+            applyDeviceSpecificSettings() {
+                const body = document.body;
+                body.setAttribute('data-device', this.currentDevice);
+
+                // Mobile-specific optimizations
+                if (this.currentDevice === 'mobile') {
+                    this.enableTouchOptimizations();
+                }
+
+                // Desktop-specific features
+                if (this.currentDevice === 'desktop') {
+                    this.enableKeyboardShortcuts();
+                }
+            }
+
+            enableTouchOptimizations() {
+                // Add touch event listeners for better mobile experience
+                document.querySelectorAll('.card').forEach(card => {
+                    card.addEventListener('touchstart', function() {
+                        this.style.opacity = '0.8';
+                    });
+                    card.addEventListener('touchend', function() {
+                        this.style.opacity = '1';
+                    });
+                });
+            }
+
+            enableKeyboardShortcuts() {
+                document.addEventListener('keydown', (e) => {
+                    // Ctrl/Cmd + N: New project
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                        e.preventDefault();
+                        if (typeof app !== 'undefined') {
+                            app.showCreateProjectModal();
+                        }
+                    }
+                    // Ctrl/Cmd + P: New photo
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                        e.preventDefault();
+                        if (typeof app !== 'undefined') {
+                            app.showCameraModal();
+                        }
+                    }
+                });
+            }
+        }
+
+        // Initialize responsive UI
+        const responsiveUI = new ResponsiveUI();
+    </script>
+    <script src="/pwa-init.js?v=3"></script>
 </body>
 </html>
