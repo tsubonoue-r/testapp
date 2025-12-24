@@ -117,7 +117,8 @@ app.get('*', async (c) => {
   try {
     // Try to fetch from Workers Assets
     if (c.env.ASSETS) {
-      const assetResponse = await c.env.ASSETS.fetch(new URL(path, c.req.url));
+      // Workers Assets Fetcher accepts path strings directly
+      const assetResponse = await c.env.ASSETS.fetch(path);
 
       if (assetResponse.ok) {
         // Clone the response to modify headers
@@ -139,7 +140,8 @@ app.get('*', async (c) => {
     // If file not found and not a file request (no extension), try SPA fallback
     if (!path.includes('.')) {
       if (c.env.ASSETS) {
-        const indexResponse = await c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
+        // Use path string directly for SPA fallback
+        const indexResponse = await c.env.ASSETS.fetch('/index.html');
         if (indexResponse.ok) {
           const response = new Response(indexResponse.body, indexResponse);
           response.headers.set('Content-Type', 'text/html; charset=utf-8');
