@@ -109,9 +109,16 @@ app.get('*', async (c) => {
   // Get the requested path
   let path = c.req.path;
 
-  // Root path -> serve index.html
-  if (path === '/') {
-    path = '/index.html';
+  // Root path -> device detection
+  if (path === "/") {
+    // デバイス判定: User-Agentから判別
+    const userAgent = c.req.header("user-agent") || "";
+    const isMobile = /Mobile|Android|iPhone/i.test(userAgent);
+    const isTablet = /iPad|Android.*Tablet/i.test(userAgent);
+    const isDesktop = !isMobile && !isTablet;
+
+    // PCブラウザならpc.html、スマホ・タブレットならindex.html
+    path = isDesktop ? "/pc.html" : "/index.html";
   }
 
   try {
