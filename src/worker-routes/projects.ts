@@ -314,6 +314,67 @@ projects.patch('/:id/status', async (c) => {
 });
 
 /**
+ * PATCH /api/projects/:id/archive
+ * 案件をアーカイブ/復元
+ */
+projects.patch('/:id/archive', async (c) => {
+  try {
+    const id = c.req.param('id');
+    const body = await c.req.json<{ archived: boolean }>();
+    const { archived } = body;
+
+    if (archived === undefined) {
+      return c.json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'アーカイブ状態は必須です',
+        },
+      }, 400);
+    }
+
+    // 案件が存在するか確認
+    const existing = await c.env.DB.prepare(
+      'SELECT * FROM projects WHERE id = ?'
+    ).bind(id).first();
+
+    if (!existing) {
+      return c.json({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: `案件が見つかりません: ${id}`,
+        },
+      }, 404);
+    }
+
+    // アーカイブを更新
+    await c.env.DB.prepare(
+      'UPDATE projects SET archived = ?, updated_at = ? WHERE id = ?'
+    ).bind(archived ? 1 : 0, new Date().toISOString(), id).run();
+
+    // 更新後の案件を取得
+    const project = await c.env.DB.prepare(
+      'SELECT * FROM projects WHERE id = ?'
+    ).bind(id).first() as Project;
+
+    return c.json({
+      success: true,
+      data: project,
+      message: archived ? '案件をアーカイブしました' : '案件を復元しました',
+    });
+  } catch (error) {
+    return c.json({
+      success: false,
+      error: {
+        code: 'UPDATE_ERROR',
+        message: error instanceof Error ? error.message : '不明なエラー',
+      },
+      }, 400);
+  }
+});
+
+/**
  * DELETE /api/projects/:id
  * 案件を削除
  */
