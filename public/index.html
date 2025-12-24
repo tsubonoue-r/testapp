@@ -489,6 +489,93 @@
             padding: 8px;
             font-size: 14px;
         }
+
+        /* ================================================
+           レスポンシブ対応: タブレット・PC版
+           ================================================ */
+
+        /* タブレット (768px以上) */
+        @media (min-width: 768px) {
+            .app {
+                max-width: 100%;
+                box-shadow: none;
+            }
+
+            header {
+                padding: 20px 32px;
+            }
+
+            header h1 {
+                font-size: 24px;
+            }
+
+            .tabs {
+                padding: 0 32px;
+            }
+
+            .tab {
+                padding: 20px;
+                font-size: 15px;
+            }
+
+            .content {
+                padding: 24px 32px;
+            }
+
+            .cards-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+            }
+
+            .modal-content {
+                max-width: 600px;
+            }
+        }
+
+        /* PC (1024px以上) */
+        @media (min-width: 1024px) {
+            .app {
+                max-width: 100%;
+            }
+
+            header {
+                padding: 24px 48px;
+            }
+
+            header h1 {
+                font-size: 28px;
+            }
+
+            .tabs {
+                padding: 0 48px;
+            }
+
+            .content {
+                max-width: 1600px;
+                margin: 0 auto;
+                padding: 32px 48px;
+            }
+
+            .cards-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 24px;
+            }
+
+            .modal-content {
+                max-width: 800px;
+            }
+        }
+
+        /* 大画面 (1440px以上) */
+        @media (min-width: 1440px) {
+            .cards-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .modal-content {
+                max-width: 1000px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1129,6 +1216,93 @@
         #drop-zone:hover {
             background: #e8eaf6;
             border-color: #5566d3;
+        }
+
+        /* ================================================
+           レスポンシブ対応: タブレット・PC版
+           ================================================ */
+
+        /* タブレット (768px以上) */
+        @media (min-width: 768px) {
+            .app {
+                max-width: 100%;
+                box-shadow: none;
+            }
+
+            header {
+                padding: 20px 32px;
+            }
+
+            header h1 {
+                font-size: 24px;
+            }
+
+            .tabs {
+                padding: 0 32px;
+            }
+
+            .tab {
+                padding: 20px;
+                font-size: 15px;
+            }
+
+            .content {
+                padding: 24px 32px;
+            }
+
+            .cards-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+            }
+
+            .modal-content {
+                max-width: 600px;
+            }
+        }
+
+        /* PC (1024px以上) */
+        @media (min-width: 1024px) {
+            .app {
+                max-width: 100%;
+            }
+
+            header {
+                padding: 24px 48px;
+            }
+
+            header h1 {
+                font-size: 28px;
+            }
+
+            .tabs {
+                padding: 0 48px;
+            }
+
+            .content {
+                max-width: 1600px;
+                margin: 0 auto;
+                padding: 32px 48px;
+            }
+
+            .cards-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 24px;
+            }
+
+            .modal-content {
+                max-width: 800px;
+            }
+        }
+
+        /* 大画面 (1440px以上) */
+        @media (min-width: 1440px) {
+            .cards-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .modal-content {
+                max-width: 1000px;
+            }
         }
     </style>
 
