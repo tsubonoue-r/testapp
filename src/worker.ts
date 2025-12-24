@@ -109,8 +109,8 @@ app.get('*', async (c) => {
   // Get the requested path
   let path = c.req.path;
 
-  // Root path -> device detection
-  if (path === "/") {
+  // Root path OR /pc -> device detection
+  if (path === "/" || path === "/pc") {
     // デバイス判定: User-Agentから判別
     const userAgent = c.req.header("user-agent") || "";
     const isMobile = /Mobile|Android|iPhone/i.test(userAgent);
@@ -124,8 +124,9 @@ app.get('*', async (c) => {
   try {
     // Try to fetch from Workers Assets
     if (c.env.ASSETS) {
-      // Workers Assets Fetcher accepts path strings directly
-      const assetResponse = await c.env.ASSETS.fetch(path);
+      // Create a proper Request object for Workers Assets
+      const assetRequest = new Request(new URL(path, c.req.url), c.req.raw);
+      const assetResponse = await c.env.ASSETS.fetch(assetRequest);
 
       if (assetResponse.ok) {
         // Clone the response to modify headers
@@ -147,8 +148,9 @@ app.get('*', async (c) => {
     // If file not found and not a file request (no extension), try SPA fallback
     if (!path.includes('.')) {
       if (c.env.ASSETS) {
-        // Use path string directly for SPA fallback
-        const indexResponse = await c.env.ASSETS.fetch('/index.html');
+        // Create Request object for SPA fallback
+        const indexRequest = new Request(new URL('/index.html', c.req.url), c.req.raw);
+        const indexResponse = await c.env.ASSETS.fetch(indexRequest);
         if (indexResponse.ok) {
           const response = new Response(indexResponse.body, indexResponse);
           response.headers.set('Content-Type', 'text/html; charset=utf-8');
