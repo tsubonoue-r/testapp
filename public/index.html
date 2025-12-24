@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <meta name="theme-color" content="#667eea">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -40,6 +40,13 @@
             --radius-lg: 16px;
             --header-height: 64px;
             --tab-height: 56px;
+        }
+
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+            margin: 0;
+            padding: 0;
         }
 
         body {
@@ -108,9 +115,11 @@
            =================================== */
         .app {
             width: 100%;
+            max-width: 100vw;
             min-height: 100vh;
             background: white;
             position: relative;
+            overflow-x: hidden;
         }
 
         /* Header */
@@ -121,6 +130,7 @@
             box-shadow: var(--shadow-md);
             position: sticky;
             top: 0;
+            width: 100%;
             z-index: 100;
             display: flex;
             justify-content: space-between;
@@ -131,26 +141,37 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            flex: 1;
+            min-width: 0;
         }
 
         .logo {
             font-size: 28px;
+            flex-shrink: 0;
         }
 
         header h1 {
             font-size: 18px;
             font-weight: 600;
             margin-bottom: 2px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         header p {
             font-size: 12px;
             opacity: 0.9;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .header-actions {
             display: flex;
             gap: 8px;
+            flex-shrink: 0;
+            align-items: center;
         }
 
         .header-btn {
@@ -192,7 +213,6 @@
 
         /* Sidebar (Hidden on mobile) */
         .sidebar {
-            display: none;
             position: fixed;
             left: 0;
             top: var(--header-height);
@@ -201,12 +221,14 @@
             background: white;
             border-right: 1px solid var(--border-color);
             overflow-y: auto;
+            overflow-x: hidden;
             z-index: 90;
             transform: translateX(-100%);
             transition: transform 0.3s;
         }
 
         .sidebar.active {
+            display: block;
             transform: translateX(0);
         }
 
@@ -248,8 +270,10 @@
             border-bottom: 1px solid var(--border-color);
             position: sticky;
             top: var(--header-height);
+            width: 100%;
             z-index: 80;
             overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .tab {
@@ -278,6 +302,8 @@
             padding: 16px;
             background: var(--secondary-color);
             min-height: calc(100vh - var(--header-height) - var(--tab-height));
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .section {
@@ -297,6 +323,8 @@
             box-shadow: var(--shadow-sm);
             border: 1px solid var(--border-color);
             transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .card:hover {
@@ -358,9 +386,10 @@
         /* Photo Grid */
         .photo-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr));
             gap: 12px;
             margin-top: 16px;
+            width: 100%;
         }
 
         .photo-item {
@@ -474,6 +503,7 @@
             background: white;
             max-width: 500px;
             width: 90%;
+            max-width: min(500px, 90vw);
             border-radius: var(--radius-lg);
             overflow: hidden;
             max-height: 90vh;
@@ -497,6 +527,7 @@
 
         .form-group {
             margin-bottom: 16px;
+            width: 100%;
         }
 
         .form-group label {
@@ -517,6 +548,7 @@
             font-size: 14px;
             font-family: inherit;
             transition: border-color 0.3s;
+            box-sizing: border-box;
         }
 
         .form-group input:focus,
@@ -606,9 +638,10 @@
         /* Dashboard Stats */
         .dashboard-stats {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr));
             gap: 12px;
             margin-bottom: 24px;
+            width: 100%;
         }
 
         .stat-card {
@@ -637,6 +670,7 @@
         @media (min-width: 768px) {
             :root {
                 --header-height: 72px;
+                --sidebar-width: 280px;
             }
 
             .app {
@@ -666,15 +700,18 @@
             .sidebar {
                 display: block;
                 transform: translateX(0);
+                width: var(--sidebar-width);
             }
 
             .content {
-                margin-left: 280px;
+                margin-left: var(--sidebar-width);
+                width: calc(100% - var(--sidebar-width));
                 padding: 24px;
             }
 
             .tabs {
-                margin-left: 280px;
+                margin-left: var(--sidebar-width);
+                width: calc(100% - var(--sidebar-width));
             }
 
             .photo-grid {
@@ -710,6 +747,7 @@
         @media (min-width: 1024px) {
             :root {
                 --header-height: 80px;
+                --sidebar-width: 280px;
             }
 
             .app {
@@ -729,17 +767,19 @@
             }
 
             .sidebar {
-                width: 320px;
+                width: var(--sidebar-width);
             }
 
             .content {
-                margin-left: 320px;
+                margin-left: var(--sidebar-width);
+                width: calc(100% - var(--sidebar-width));
                 padding: 32px;
-                max-width: calc(100vw - 320px);
+                max-width: calc(100vw - var(--sidebar-width));
             }
 
             .tabs {
-                margin-left: 320px;
+                margin-left: var(--sidebar-width);
+                width: calc(100% - var(--sidebar-width));
             }
 
             .photo-grid {
@@ -790,22 +830,26 @@
            Large Desktop (1440px+)
            =================================== */
         @media (min-width: 1440px) {
+            :root {
+                --sidebar-width: 280px;
+                --content-max-width: 1400px;
+            }
+
             .content {
-                max-width: 1400px;
-                margin-left: auto;
-                margin-right: auto;
+                margin-left: var(--sidebar-width);
+                width: calc(100% - var(--sidebar-width));
+                max-width: var(--content-max-width);
                 padding: 40px;
             }
 
             .tabs {
-                margin-left: 0;
-                max-width: 1400px;
-                margin-left: auto;
-                margin-right: auto;
+                margin-left: var(--sidebar-width);
+                width: calc(100% - var(--sidebar-width));
+                max-width: calc(var(--content-max-width) + var(--sidebar-width));
             }
 
             .sidebar {
-                left: calc((100vw - 1400px) / 2 - 320px);
+                width: var(--sidebar-width);
             }
         }
 
@@ -838,6 +882,40 @@
             /* Hide hover effects on touch devices */
             .card:hover {
                 transform: none;
+            }
+
+            /* Mobile sidebar overlay */
+            .sidebar {
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+            }
+
+            /* Hamburger is visible on mobile */
+            .hamburger {
+                display: block;
+            }
+
+            /* Content has no left margin on mobile */
+            .content {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .tabs {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            /* Smaller header text on mobile */
+            header h1 {
+                font-size: 16px;
+            }
+
+            header p {
+                font-size: 11px;
+            }
+
+            .logo {
+                font-size: 24px;
             }
         }
 
@@ -887,6 +965,7 @@
             display: flex;
             gap: 8px;
             margin-right: 8px;
+            flex-wrap: nowrap;
         }
 
         .device-switcher button {
@@ -899,6 +978,7 @@
             font-size: 20px;
             transition: all 0.2s;
             min-width: 44px;
+            flex-shrink: 0;
         }
 
         .device-switcher button:hover {
