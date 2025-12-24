@@ -23,6 +23,12 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            color: #2c3e50;
+            font-weight: 600;
         }
 
         :root {
@@ -55,6 +61,9 @@
             color: var(--text-color);
             transition: background 0.3s, color 0.3s;
             line-height: 1.6;
+            font-size: 15px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         /* ===================================
@@ -102,12 +111,26 @@
         }
 
         body.dark-mode .sidebar {
-            background: #2d3748;
+            background: linear-gradient(180deg, #1a202c 0%, #2d3748 100%);
             border-right-color: #4a5568;
         }
 
+        body.dark-mode .sidebar-item {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
         body.dark-mode .sidebar-item:hover {
-            background: #4a5568;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-mode .sidebar-item.active {
+            background: rgba(102, 126, 234, 0.3);
+            border-left: 3px solid #90cdf4;
+            color: white;
+        }
+
+        body.dark-mode .sidebar-title {
+            color: rgba(255, 255, 255, 0.5);
         }
 
         /* ===================================
@@ -127,7 +150,7 @@
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
             color: white;
             padding: 16px;
-            box-shadow: var(--shadow-md);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
             position: sticky;
             top: 0;
             width: 100%;
@@ -157,6 +180,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            color: white;
         }
 
         header p {
@@ -182,13 +206,18 @@
             border-radius: var(--radius-sm);
             cursor: pointer;
             font-size: 13px;
-            transition: all 0.3s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
             white-space: nowrap;
         }
 
         .header-btn:hover {
             background: rgba(255,255,255,0.2);
+            transform: translateY(-1px);
+        }
+
+        .header-btn:active {
+            transform: translateY(0);
         }
 
         /* Hamburger Menu (Mobile) */
@@ -218,13 +247,32 @@
             top: var(--header-height);
             width: 280px;
             height: calc(100vh - var(--header-height));
-            background: white;
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
             border-right: 1px solid var(--border-color);
             overflow-y: auto;
             overflow-x: hidden;
             z-index: 90;
             transform: translateX(-100%);
-            transition: transform 0.3s;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+            color: white;
+
+            /* Custom scrollbar */
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
         }
 
         .sidebar.active {
@@ -234,32 +282,41 @@
 
         .sidebar-section {
             padding: 16px;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-section:last-child {
+            padding-bottom: 80px; /* Last section padding for scrolling */
         }
 
         .sidebar-title {
             font-size: 12px;
             font-weight: 600;
-            color: var(--text-light);
+            color: rgba(255, 255, 255, 0.6);
             text-transform: uppercase;
             margin-bottom: 12px;
+            letter-spacing: 0.5px;
         }
 
         .sidebar-item {
             padding: 12px;
             border-radius: var(--radius-sm);
             cursor: pointer;
-            transition: background 0.2s;
-            margin-bottom: 4px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            margin: 4px 0;
+            color: rgba(255, 255, 255, 0.9);
         }
 
         .sidebar-item:hover {
-            background: var(--secondary-color);
+            background: rgba(255, 255, 255, 0.1);
+            padding-left: 20px;
+            transform: translateX(4px);
         }
 
         .sidebar-item.active {
-            background: rgba(102, 126, 234, 0.1);
-            color: var(--primary-color);
+            background: rgba(255, 255, 255, 0.15);
+            border-left: 3px solid #667eea;
+            color: white;
             font-weight: 600;
         }
 
@@ -299,7 +356,7 @@
 
         /* Content */
         .content {
-            padding: 16px;
+            padding: 24px;
             background: var(--secondary-color);
             min-height: calc(100vh - var(--header-height) - var(--tab-height));
             width: 100%;
@@ -320,22 +377,23 @@
             border-radius: var(--radius-md);
             padding: 16px;
             margin-bottom: 12px;
-            box-shadow: var(--shadow-sm);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
             border: 1px solid var(--border-color);
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             width: 100%;
             box-sizing: border-box;
         }
 
         .card:hover {
             transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
         }
 
         .card h3 {
             font-size: 16px;
             margin-bottom: 8px;
-            color: var(--text-color);
+            color: #2c3e50;
+            font-weight: 600;
         }
 
         .card-meta {
@@ -425,7 +483,7 @@
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             margin-top: 8px;
             touch-action: manipulation;
         }
@@ -433,11 +491,12 @@
         .btn-primary {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
             color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
         }
 
         .btn-primary:active {
@@ -667,7 +726,7 @@
         /* ===================================
            Tablet Layout (768px - 1023px)
            =================================== */
-        @media (min-width: 768px) {
+        @media (min-width: 768px) and (max-width: 1023px) {
             :root {
                 --header-height: 72px;
                 --sidebar-width: 280px;
@@ -723,6 +782,7 @@
                 padding: 20px;
             }
 
+            /* Camera FAB is visible on tablet */
             .fab {
                 right: 32px;
                 bottom: 32px;
@@ -799,9 +859,9 @@
                 transform: translateY(-2px);
             }
 
+            /* Hide camera FAB on desktop (PC version) */
             .fab {
-                right: 48px;
-                bottom: 48px;
+                display: none !important;
             }
 
             .modal-content {
@@ -823,6 +883,15 @@
             .form-group textarea,
             .form-group select {
                 padding: 14px;
+            }
+
+            /* Enhanced hover effects for desktop */
+            .sidebar-item:hover {
+                background: rgba(255, 255, 255, 0.15);
+            }
+
+            .btn-primary:hover {
+                box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5);
             }
         }
 
