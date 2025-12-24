@@ -879,6 +879,59 @@
             outline: 2px solid var(--primary-color);
             outline-offset: 2px;
         }
+
+        /* ===================================
+           Device Switcher
+           =================================== */
+        .device-switcher {
+            display: flex;
+            gap: 8px;
+            margin-right: 8px;
+        }
+
+        .device-switcher button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid transparent;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.2s;
+            min-width: 44px;
+        }
+
+        .device-switcher button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .device-switcher button.active {
+            background: rgba(255, 255, 255, 0.4);
+            border-color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Device-specific visibility classes */
+        body[data-device="mobile"] .desktop-only { display: none !important; }
+        body[data-device="mobile"] .tablet-only { display: none !important; }
+        body[data-device="tablet"] .mobile-only { display: none !important; }
+        body[data-device="tablet"] .desktop-only { display: none !important; }
+        body[data-device="desktop"] .mobile-only { display: none !important; }
+        body[data-device="desktop"] .tablet-only { display: none !important; }
+
+        /* Mobile device switcher adjustments */
+        @media (max-width: 767px) {
+            .device-switcher {
+                gap: 4px;
+                margin-right: 4px;
+            }
+
+            .device-switcher button {
+                padding: 6px 8px;
+                font-size: 16px;
+                min-width: 36px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -897,6 +950,11 @@
                 </div>
             </div>
             <div class="header-actions">
+                <div class="device-switcher">
+                    <button data-device="mobile" title="モバイル表示">📱</button>
+                    <button data-device="tablet" title="タブレット表示">📟</button>
+                    <button data-device="desktop" title="PC表示">💻</button>
+                </div>
                 <button class="header-btn" onclick="app.toggleDarkMode()" title="ダークモード切替">🌙</button>
                 <button class="header-btn" onclick="app.showHelp()" title="ヘルプ">❓</button>
             </div>
@@ -1121,62 +1179,121 @@
 
     <script src="/app.js?v=3"></script>
     <script>
-        // Device detection and responsive enhancements
-        class ResponsiveUI {
+        /**
+         * DeviceManager - Automatic device detection and manual UI switching
+         *
+         * Features:
+         * - Auto-detection based on User-Agent, screen size, touch support, and pixel ratio
+         * - Manual device switching with persistent localStorage
+         * - Priority: Saved preference > Auto-detection > Responsive CSS
+         */
+        class DeviceManager {
             constructor() {
-                this.currentDevice = this.detectDevice();
+                this.storageKey = 'preferredDevice';
                 this.init();
             }
 
+            /**
+             * Auto-detect device type based on multiple factors
+             * @returns {string} 'mobile' | 'tablet' | 'desktop'
+             */
             detectDevice() {
+                const ua = navigator.userAgent;
                 const width = window.innerWidth;
-                if (width < 768) return 'mobile';
-                if (width < 1024) return 'tablet';
-                return 'desktop';
-            }
+                const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+                const pixelRatio = window.devicePixelRatio || 1;
 
-            init() {
-                this.applyDeviceSpecificSettings();
-                window.addEventListener('resize', () => {
-                    const newDevice = this.detectDevice();
-                    if (newDevice !== this.currentDevice) {
-                        this.currentDevice = newDevice;
-                        this.applyDeviceSpecificSettings();
+                // User-Agent detection
+                const isMobileUA = /iPhone|iPod|Android.*Mobile/i.test(ua);
+                const isTabletUA = /iPad|Android(?!.*Mobile)/i.test(ua);
+
+                // Screen size-based detection (primary factor)
+                if (width < 768) {
+                    return 'mobile';
+                } else if (width < 1024) {
+                    // For iPad and Android tablets
+                    if (isTabletUA || (hasTouch && pixelRatio > 1)) {
+                        return 'tablet';
                     }
-                });
-
-                // Log device info
-                console.log('📱 Device detected:', this.currentDevice);
-                console.log('🖥️ Screen:', window.innerWidth, 'x', window.innerHeight);
+                    // Small desktop windows
+                    return 'tablet';
+                } else {
+                    // Desktop
+                    return 'desktop';
+                }
             }
 
-            applyDeviceSpecificSettings() {
-                const body = document.body;
-                body.setAttribute('data-device', this.currentDevice);
-
-                // Mobile-specific optimizations
-                if (this.currentDevice === 'mobile') {
-                    this.enableTouchOptimizations();
+            /**
+             * Get saved device preference from localStorage
+             * @returns {string|null}
+             */
+            getSavedDevice() {
+                try {
+                    return localStorage.getItem(this.storageKey);
+                } catch (e) {
+                    console.warn('LocalStorage not available:', e);
+                    return null;
                 }
+            }
 
-                // Desktop-specific features
-                if (this.currentDevice === 'desktop') {
+            /**
+             * Save device preference to localStorage
+             * @param {string} device
+             */
+            saveDevice(device) {
+                try {
+                    localStorage.setItem(this.storageKey, device);
+                    console.log('Device preference saved:', device);
+                } catch (e) {
+                    console.warn('Cannot save to localStorage:', e);
+                }
+            }
+
+            /**
+             * Apply device-specific UI settings
+             * @param {string} device
+             */
+            applyDevice(device) {
+                document.body.setAttribute('data-device', device);
+                this.updateSwitcherButtons(device);
+
+                // Apply device-specific optimizations
+                if (device === 'mobile') {
+                    this.enableTouchOptimizations();
+                } else if (device === 'desktop') {
                     this.enableKeyboardShortcuts();
                 }
+
+                console.log('Device applied:', device);
             }
 
+            /**
+             * Update switcher button states
+             * @param {string} device
+             */
+            updateSwitcherButtons(device) {
+                document.querySelectorAll('.device-switcher button').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.device === device);
+                });
+            }
+
+            /**
+             * Enable touch optimizations for mobile devices
+             */
             enableTouchOptimizations() {
-                // Add touch event listeners for better mobile experience
                 document.querySelectorAll('.card').forEach(card => {
                     card.addEventListener('touchstart', function() {
                         this.style.opacity = '0.8';
-                    });
+                    }, { passive: true });
                     card.addEventListener('touchend', function() {
                         this.style.opacity = '1';
-                    });
+                    }, { passive: true });
                 });
             }
 
+            /**
+             * Enable keyboard shortcuts for desktop
+             */
             enableKeyboardShortcuts() {
                 document.addEventListener('keydown', (e) => {
                     // Ctrl/Cmd + N: New project
@@ -1195,9 +1312,71 @@
                     }
                 });
             }
+
+            /**
+             * Initialize device manager
+             */
+            init() {
+                // Priority: Saved preference > Auto-detection
+                const savedDevice = this.getSavedDevice();
+                const detectedDevice = this.detectDevice();
+                const device = savedDevice || detectedDevice;
+
+                this.applyDevice(device);
+
+                // Setup switcher button event listeners
+                document.addEventListener('DOMContentLoaded', () => {
+                    document.querySelectorAll('.device-switcher button').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            const selectedDevice = btn.dataset.device;
+                            this.saveDevice(selectedDevice);
+                            this.applyDevice(selectedDevice);
+                        });
+                    });
+                });
+
+                // Re-detect on window resize (only if no saved preference)
+                let resizeTimer;
+                window.addEventListener('resize', () => {
+                    clearTimeout(resizeTimer);
+                    resizeTimer = setTimeout(() => {
+                        if (!this.getSavedDevice()) {
+                            const newDevice = this.detectDevice();
+                            this.applyDevice(newDevice);
+                        }
+                    }, 300);
+                });
+
+                // Log device information
+                console.log('Device Manager initialized');
+                console.log('- Screen:', window.innerWidth, 'x', window.innerHeight);
+                console.log('- User-Agent:', navigator.userAgent);
+                console.log('- Touch:', 'ontouchstart' in window || navigator.maxTouchPoints > 0);
+                console.log('- Pixel Ratio:', window.devicePixelRatio || 1);
+                console.log('- Auto-detected:', detectedDevice);
+                console.log('- Saved preference:', savedDevice || 'None');
+                console.log('- Applied device:', device);
+            }
         }
 
-        // Initialize responsive UI
+        // Initialize Device Manager
+        const deviceManager = new DeviceManager();
+
+        // Backward compatibility: Keep ResponsiveUI for legacy code
+        class ResponsiveUI {
+            constructor() {
+                this.currentDevice = deviceManager.detectDevice();
+            }
+
+            detectDevice() {
+                return deviceManager.detectDevice();
+            }
+
+            applyDeviceSpecificSettings() {
+                // Handled by DeviceManager
+            }
+        }
+
         const responsiveUI = new ResponsiveUI();
     </script>
     <script src="/pwa-init.js?v=3"></script>
