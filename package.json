@@ -14,7 +14,8 @@
     "cf:tail": "npx wrangler tail",
     "test": "vitest",
     "lint": "eslint . --ext .ts,.tsx",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "create-test-data": "tsx scripts/create-test-data.ts"
   },
   "keywords": [
     "agentic-os",
