@@ -31,6 +31,9 @@ export function initializeDatabase() {
       password TEXT NOT NULL,
       name TEXT NOT NULL,
       role TEXT NOT NULL DEFAULT 'user',
+      lark_user_id TEXT,
+      lark_open_id TEXT,
+      is_from_lark INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
@@ -62,6 +65,34 @@ export function initializeDatabase() {
     if (error.message.includes('duplicate column name')) {
       // カラムが既に存在する場合はスキップ
     } else {
+      throw error;
+    }
+  }
+
+  // 既存のusersテーブルにLark連携カラムを追加（存在しない場合のみ）
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN lark_user_id TEXT`);
+    console.log('✅ users テーブルに lark_user_id カラムを追加しました');
+  } catch (error: any) {
+    if (!error.message.includes('duplicate column name')) {
+      throw error;
+    }
+  }
+
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN lark_open_id TEXT`);
+    console.log('✅ users テーブルに lark_open_id カラムを追加しました');
+  } catch (error: any) {
+    if (!error.message.includes('duplicate column name')) {
+      throw error;
+    }
+  }
+
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN is_from_lark INTEGER DEFAULT 0`);
+    console.log('✅ users テーブルに is_from_lark カラムを追加しました');
+  } catch (error: any) {
+    if (!error.message.includes('duplicate column name')) {
       throw error;
     }
   }
