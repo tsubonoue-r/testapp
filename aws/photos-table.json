@@ -1,0 +1,20 @@
+{
+  "TableName": "testapp-photos",
+  "AttributeDefinitions": [
+    { "AttributeName": "id", "AttributeType": "S" },
+    { "AttributeName": "signboardId", "AttributeType": "S" }
+  ],
+  "KeySchema": [
+    { "AttributeName": "id", "KeyType": "HASH" }
+  ],
+  "GlobalSecondaryIndexes": [
+    {
+      "IndexName": "signboardId-index",
+      "KeySchema": [
+        { "AttributeName": "signboardId", "KeyType": "HASH" }
+      ],
+      "Projection": { "ProjectionType": "ALL" }
+    }
+  ],
+  "BillingMode": "PAY_PER_REQUEST"
+}

@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="工事写真">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    <title>工事看板写真システム</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* Phase 7-6: ダークモード */
+        body.dark-mode {
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .app {
+            background: #1a1a1a;
+        }
+
+        body.dark-mode header {
+            background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+        }
+
+        body.dark-mode .tabs {
+            background: #2d3748;
+            border-bottom-color: #4a5568;
+        }
+
+        body.dark-mode .tab {
+            color: #a0aec0;
+        }
+
+        body.dark-mode .tab.active {
+            color: #90cdf4;
+            border-bottom-color: #90cdf4;
+        }
+
+        body.dark-mode .content {
+            background: #1a1a1a;
+        }
+
+        body.dark-mode .card {
+            background: #2d3748;
+            border-color: #4a5568;
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .btn-secondary {
+            background: #4a5568;
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .modal-content {
+            background: #2d3748;
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .form-group input,
+        body.dark-mode .form-group textarea,
+        body.dark-mode .form-group select {
+            background: #1a1a1a;
+            color: #e0e0e0;
+            border-color: #4a5568;
+        }
+
+        body.dark-mode .badge {
+            filter: brightness(0.8);
+        }
+
+        body.dark-mode .photo-card {
+            background: #2d3748;
+        }
+
+        body.dark-mode table {
+            background: #2d3748;
+            color: #e0e0e0;
+        }
+
+        body.dark-mode table thead {
+            background: #1a1a1a;
+        }
+
+        body.dark-mode table td {
+            border-color: #4a5568;
+        }
+
+        body.dark-mode #dark-mode-toggle:hover {
+            background: rgba(255,255,255,0.3) !important;
+        }
+
+        .app {
+            max-width: 428px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            padding-bottom: 80px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        header p {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 16px;
+            text-align: center;
+            background: none;
+            border: none;
+            font-size: 14px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: 600;
+        }
+
+        .content {
+            padding: 16px;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 1px solid #e0e0e0;
+        }
+
+        .card h3 {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .card-meta {
+            display: flex;
+            gap: 12px;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge.status-in_progress {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .badge.status-planned {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .badge.status-completed {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .photo-item {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 32px;
+            overflow: hidden;
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:active {
+            transform: translateY(2px);
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 16px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .fab {
+            position: fixed;
+            bottom: 24px;
+            right: max(calc((100vw - 428px) / 2 + 24px), 24px);
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s;
+            z-index: 100;
+        }
+
+        .fab:active {
+            transform: scale(0.9);
+        }
+
+        /* モーダル */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            max-width: 400px;
+            width: 90%;
+            border-radius: 16px;
+            overflow: hidden;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            padding: 0 20px 20px;
+        }
+
+        .modal-actions button {
+            flex: 1;
+        }
+
+        /* カメラUI */
+        .camera-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4/3;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .camera-container video,
+        .camera-container canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .camera-container canvas {
+            display: none;
+        }
+
+        .signboard-overlay {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: #fff8e1;
+            border: 3px solid #f57c00;
+            border-radius: 8px;
+            padding: 12px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .signboard-overlay h3 {
+            font-size: 14px;
+            color: #e65100;
+            margin-bottom: 6px;
+            border-bottom: 2px solid #f57c00;
+            padding-bottom: 4px;
+        }
+
+        .signboard-overlay .content {
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .signboard-overlay .content div {
+            margin-bottom: 2px;
+        }
+
+        /* 看板編集UI */
+        .edit-canvas-container {
+            position: relative;
+            width: 100%;
+            background: #fff8e1;
+            border: 3px solid #f57c00;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .edit-canvas {
+            width: 100%;
+            display: block;
+            cursor: crosshair;
+        }
+
+        .camera-controls {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .camera-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #667eea;
+            color: white;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .card-actions button {
+            flex: 1;
+            padding: 8px;
+            font-size: 14px;
+        }
+
+        /* ================================================
+           レスポンシブ対応: タブレット・PC版
+           ================================================ */
+
+        /* タブレット (768px以上) */
+        @media (min-width: 768px) {
+            .app {
+                max-width: 100%;
+                box-shadow: none;
+            }
+
+            header {
+                padding: 20px 32px;
+            }
+
+            header h1 {
+                font-size: 24px;
+            }
+
+            .tabs {
+                padding: 0 32px;
+            }
+
+            .tab {
+                padding: 20px;
+                font-size: 15px;
+            }
+
+            .content {
+                padding: 24px 32px;
+            }
+
+            .cards-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+            }
+
+            .modal-content {
+                max-width: 600px;
+            }
+        }
+
+        /* PC (1024px以上) */
+        @media (min-width: 1024px) {
+            .app {
+                max-width: 100%;
+            }
+
+            header {
+                padding: 24px 48px;
+            }
+
+            header h1 {
+                font-size: 28px;
+            }
+
+            .tabs {
+                padding: 0 48px;
+            }
+
+            .content {
+                max-width: 1600px;
+                margin: 0 auto;
+                padding: 32px 48px;
+            }
+
+            .cards-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 24px;
+            }
+
+            .modal-content {
+                max-width: 800px;
+            }
+        }
+
+        /* 大画面 (1440px以上) */
+        @media (min-width: 1440px) {
+            .cards-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .modal-content {
+                max-width: 1000px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1>📸 工事看板写真システム</h1>
+                    <p id="header-subtitle">案件と写真を簡単管理</p>
+                </div>
+                <button id="dark-mode-toggle" onclick="app.toggleDarkMode()"
+                        style="background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 44px; height: 44px; font-size: 24px; cursor: pointer; transition: all 0.3s;">
+                    🌙
+                </button>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="dashboard">📊 ダッシュボード</button>
+            <button class="tab" data-tab="projects">案件</button>
+            <button class="tab" data-tab="signboards">看板</button>
+            <button class="tab" data-tab="photos">写真</button>
+        </div>
+
+        <div class="content">
+            <!-- ダッシュボードセクション -->
+            <div id="dashboard" class="section active">
+                <h2 style="margin-bottom: 20px;">📊 統計ダッシュボード</h2>
+
+                <!-- サマリーカード -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                    <div class="card" style="text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        <h3 style="font-size: 32px; margin-bottom: 8px;" id="stat-projects">0</h3>
+                        <p style="opacity: 0.9;">案件数</p>
+                    </div>
+                    <div class="card" style="text-align: center; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                        <h3 style="font-size: 32px; margin-bottom: 8px;" id="stat-photos">0</h3>
+                        <p style="opacity: 0.9;">写真総数</p>
+                    </div>
+                    <div class="card" style="text-align: center; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+                        <h3 style="font-size: 32px; margin-bottom: 8px;" id="stat-signboards">0</h3>
+                        <p style="opacity: 0.9;">工事看板数</p>
+                    </div>
+                </div>
+
+                <!-- 案件別写真数 -->
+                <div class="card">
+                    <h3>📊 案件別写真数</h3>
+                    <div id="project-stats" style="margin-top: 16px;"></div>
+                </div>
+
+                <!-- カテゴリー別集計 -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 16px;">
+                    <div class="card">
+                        <h3>🏗️ 工程区分別</h3>
+                        <div id="category-process-stats" style="margin-top: 16px;"></div>
+                    </div>
+                    <div class="card">
+                        <h3>🔧 工種別</h3>
+                        <div id="category-worktype-stats" style="margin-top: 16px;"></div>
+                    </div>
+                </div>
+
+                <!-- 最近の活動 -->
+                <div class="card" style="margin-top: 16px;">
+                    <h3>📅 最近の活動</h3>
+                    <div id="recent-activity" style="margin-top: 16px;"></div>
+                </div>
+            </div>
+
+            <!-- 案件セクション -->
+            <div id="projects" class="section">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="show-archived-projects" onchange="app.toggleArchivedProjects()" style="width: 20px; height: 20px;">
+                        <span>📦 アーカイブ済みを表示</span>
+                    </label>
+                </div>
+                <div id="projects-list"></div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-primary" onclick="app.showCreateProjectModal()" style="flex: 1;">➕ 新しい案件を作成</button>
+                    <button class="btn btn-secondary" onclick="app.showTemplateManager()" style="flex: 1; background: #9c27b0; color: white;">📝 テンプレート管理</button>
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 8px;">
+                    <button class="btn btn-secondary" onclick="app.exportProjects('json')" style="flex: 1;">📥 JSON</button>
+                    <button class="btn btn-secondary" onclick="app.exportProjects('csv')" style="flex: 1;">📥 CSV</button>
+                </div>
+            </div>
+
+            <!-- 看板セクション -->
+            <div id="signboards" class="section">
+                <div id="signboards-list"></div>
+                <button class="btn btn-primary" onclick="app.showCreateSignboardModal()">➕ 新しい看板を作成</button>
+            </div>
+
+            <!-- 写真セクション -->
+            <div id="photos" class="section">
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label>🔍 全文検索</label>
+                    <input type="text" id="photo-search-query" placeholder="キャプション、カテゴリー、撮影箇所で検索..." oninput="app.filterPhotos()">
+                </div>
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label>🏗️ 案件で絞り込み</label>
+                    <select id="photo-project-filter" onchange="app.filterPhotos()">
+                        <option value="">すべての案件</option>
+                    </select>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px;">
+                    <div class="form-group" style="margin: 0;">
+                        <label>📋 工程区分</label>
+                        <select id="photo-category-process-filter" onchange="app.filterPhotos()">
+                            <option value="">すべて</option>
+                            <option value="foundation">基礎</option>
+                            <option value="structure">躯体</option>
+                            <option value="finishing">仕上げ</option>
+                            <option value="completion">完成</option>
+                            <option value="inspection">検査</option>
+                            <option value="other">その他</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label>📍 撮影箇所</label>
+                        <input type="text" id="photo-category-location-filter" placeholder="箇所で検索" oninput="app.filterPhotos()">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label>🔧 工種</label>
+                        <select id="photo-category-worktype-filter" onchange="app.filterPhotos()">
+                            <option value="">すべて</option>
+                            <option value="architecture">建築</option>
+                            <option value="electrical">電気</option>
+                            <option value="plumbing">設備</option>
+                            <option value="civil">土木</option>
+                            <option value="landscape">外構</option>
+                            <option value="other">その他</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- ソート設定 & 表示切り替え -->
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 16px;">
+                    <div class="form-group" style="margin: 0;">
+                        <label>📊 ソート基準</label>
+                        <select id="photo-sort-by" onchange="app.sortPhotos()">
+                            <option value="date-desc">撮影日時（新しい順）</option>
+                            <option value="date-asc">撮影日時（古い順）</option>
+                            <option value="category">カテゴリー順</option>
+                            <option value="filename-asc">ファイル名（昇順）</option>
+                            <option value="filename-desc">ファイル名（降順）</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label>👁️ 表示形式</label>
+                        <select id="photo-view-mode" onchange="app.changeViewMode()">
+                            <option value="grid">グリッド</option>
+                            <option value="list">リスト</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 16px;">
+                    <button class="btn btn-primary" onclick="app.showFileUploadModal()">📤 アップロード</button>
+                    <button class="btn btn-secondary" onclick="app.showPDFSettingsModal()">📄 PDF</button>
+                    <button class="btn btn-secondary" onclick="app.exportPhotos('json')">📥 JSON</button>
+                    <button class="btn btn-secondary" onclick="app.exportPhotos('csv')">📥 CSV</button>
+                    <button class="btn btn-secondary" onclick="app.toggleSelectionMode()" id="selection-mode-btn">✓ 選択</button>
+                </div>
+
+                <!-- 選択ツールバー（選択モード時のみ表示） -->
+                <div id="selection-toolbar" style="display: none; background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <span id="selection-count" style="font-weight: 600;">0枚選択中</span>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-secondary" onclick="app.selectAllPhotos()" style="padding: 8px 16px;">全選択</button>
+                            <button class="btn btn-primary" onclick="app.compareSelectedPhotos()" id="compare-btn" style="padding: 8px 16px; display: none;">📊 比較</button>
+                            <button class="btn btn-secondary" onclick="app.bulkMovePhotos()" style="padding: 8px 16px;">📦 移動</button>
+                            <button class="btn btn-danger" onclick="app.bulkDeletePhotos()" style="padding: 8px 16px;">🗑️ 削除</button>
+                            <button class="btn btn-secondary" onclick="app.toggleSelectionMode()" style="padding: 8px 16px;">キャンセル</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="photos-list"></div>
+            </div>
+        </div>
+
+        <button class="fab" onclick="app.showCameraModal()">📸</button>
+    </div>
+
+    <!-- 案件作成/編集モーダル -->
+    <div id="project-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="project-modal-title">新しい案件を作成</h2>
+            </div>
+            <div class="modal-body">
+                <form id="project-form">
+                    <div class="form-group">
+                        <label>📝 テンプレートから読み込み</label>
+                        <select id="template-select" onchange="app.loadTemplate(this.value)">
+                            <option value="">-- テンプレートを選択 --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>案件名 *</label>
+                        <input type="text" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>場所 *</label>
+                        <input type="text" name="location" required>
+                    </div>
+                    <div class="form-group">
+                        <label>説明</label>
+                        <textarea name="description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>開始日 *</label>
+                        <input type="date" name="startDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>終了日</label>
+                        <input type="date" name="endDate">
+                    </div>
+                    <div class="form-group">
+                        <label>ステータス</label>
+                        <select name="status">
+                            <option value="planned">計画中</option>
+                            <option value="in_progress">進行中</option>
+                            <option value="completed">完了</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeModal('project-modal')">キャンセル</button>
+                <button class="btn btn-secondary" onclick="app.saveAsTemplate()" style="background: #9c27b0; color: white;">📝 テンプレート保存</button>
+                <button class="btn btn-primary" onclick="app.saveProject()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 看板作成/編集モーダル -->
+    <div id="signboard-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>新しい看板を作成</h2>
+            </div>
+            <div class="modal-body">
+                <form id="signboard-form">
+                    <div class="form-group">
+                        <label>案件 *</label>
+                        <select name="projectId" id="signboard-project-select" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>タイトル *</label>
+                        <input type="text" name="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label>工事名</label>
+                        <input type="text" name="projectName">
+                    </div>
+                    <div class="form-group">
+                        <label>工事期間</label>
+                        <input type="text" name="constructionPeriod">
+                    </div>
+                    <div class="form-group">
+                        <label>施工会社</label>
+                        <input type="text" name="contractor">
+                    </div>
+                    <div class="form-group">
+                        <label>監督者</label>
+                        <input type="text" name="supervisor">
+                    </div>
+                    <div class="form-group">
+                        <label>連絡先</label>
+                        <input type="text" name="contact">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeModal('signboard-modal')">キャンセル</button>
+                <button class="btn btn-primary" onclick="app.saveSignboard()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- カメラモーダル -->
+    <div id="camera-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📸 写真を撮影</h2>
+            </div>
+            <div class="modal-body">
+                <div class="camera-container">
+                    <video id="camera-video" autoplay playsinline></video>
+                    <canvas id="camera-canvas"></canvas>
+                </div>
+                <div class="form-group">
+                    <label>案件を選択 *</label>
+                    <select id="camera-project-select" required></select>
+                </div>
+                <div class="form-group">
+                    <label>看板を選択（オーバーレイ表示）</label>
+                    <select id="camera-signboard-select">
+                        <option value="">看板なし</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>📋 工程区分</label>
+                    <select id="camera-category-process">
+                        <option value="">選択なし</option>
+                        <option value="foundation">基礎</option>
+                        <option value="structure">躯体</option>
+                        <option value="finishing">仕上げ</option>
+                        <option value="completion">完成</option>
+                        <option value="inspection">検査</option>
+                        <option value="other">その他</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>📍 撮影箇所</label>
+                    <input type="text" id="camera-category-location" placeholder="例: A棟1階、外構東側">
+                </div>
+                <div class="form-group">
+                    <label>🔧 工種</label>
+                    <select id="camera-category-worktype">
+                        <option value="">選択なし</option>
+                        <option value="architecture">建築</option>
+                        <option value="electrical">電気</option>
+                        <option value="plumbing">設備</option>
+                        <option value="civil">土木</option>
+                        <option value="landscape">外構</option>
+                        <option value="other">その他</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>キャプション</label>
+                    <input type="text" id="camera-caption" placeholder="写真の説明">
+                </div>
+                <div class="camera-controls">
+                    <button class="camera-btn" onclick="app.capturePhoto()">📷 撮影</button>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeCameraModal()">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 看板編集モーダル -->
+    <div id="edit-signboard-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🖊️ 看板を編集（黒板モード）</h2>
+            </div>
+            <div class="modal-body">
+                <div class="edit-canvas-container">
+                    <canvas id="edit-canvas" class="edit-canvas"></canvas>
+                </div>
+                <div class="form-group">
+                    <label>描画ツール</label>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-secondary" onclick="app.setDrawTool('pen')" id="tool-pen">🖊️ ペン</button>
+                        <button class="btn btn-secondary" onclick="app.setDrawTool('eraser')" id="tool-eraser">🧹 消しゴム</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>ペンの太さ</label>
+                    <input type="range" id="pen-size" min="2" max="20" value="3" oninput="app.setPenSize(this.value)">
+                </div>
+                <div class="form-group">
+                    <label>ペンの色</label>
+                    <input type="color" id="pen-color" value="#000000" onchange="app.setPenColor(this.value)">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeEditSignboardModal()">キャンセル</button>
+                <button class="btn btn-danger" onclick="app.clearCanvas()">全消去</button>
+                <button class="btn btn-primary" onclick="app.saveEditedSignboard()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Before/After比較モーダル -->
+    <div id="comparison-modal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>📊 Before / After 比較</h2>
+            </div>
+            <div class="modal-body">
+                <div style="position: relative; width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 8px; overflow: hidden;">
+                    <img id="comparison-before" src="" alt="Before" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;">
+                    <img id="comparison-after" src="" alt="After" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0.5;">
+                </div>
+                <div style="margin-top: 16px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">透過度調整（Before ← → After）</label>
+                    <input type="range" id="comparison-slider" min="0" max="100" value="50"
+                           oninput="app.updateComparisonOpacity(this.value)"
+                           style="width: 100%; height: 8px; border-radius: 4px; background: linear-gradient(to right, #667eea 0%, #764ba2 100%);">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
+                    <div>
+                        <p style="font-weight: 600; margin-bottom: 4px;">📷 Before</p>
+                        <p id="comparison-before-info" style="font-size: 13px; color: #666;"></p>
+                    </div>
+                    <div>
+                        <p style="font-weight: 600; margin-bottom: 4px;">📷 After</p>
+                        <p id="comparison-after-info" style="font-size: 13px; color: #666;"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeComparisonModal()">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF出力設定モーダル -->
+    <div id="pdf-settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📄 PDF出力設定</h2>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>レイアウト</label>
+                    <select id="pdf-layout">
+                        <option value="1">1枚/ページ</option>
+                        <option value="2">2枚/ページ</option>
+                        <option value="4" selected>4枚/ページ</option>
+                        <option value="6">6枚/ページ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>会社名（ヘッダー）</label>
+                    <input type="text" id="pdf-company-name" placeholder="例: 株式会社○○建設">
+                </div>
+                <div class="form-group">
+                    <label>案件名（ヘッダー）</label>
+                    <input type="text" id="pdf-project-name" placeholder="自動設定">
+                </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="pdf-show-date" checked style="width: 20px; height: 20px;">
+                        <span>日付を表示（フッター）</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="pdf-show-page-number" checked style="width: 20px; height: 20px;">
+                        <span>ページ番号を表示</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closePDFSettingsModal()">キャンセル</button>
+                <button class="btn btn-primary" onclick="app.generatePDFWithSettings()">📄 PDF生成</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 写真注釈編集モーダル -->
+    <div id="edit-photo-modal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>✏️ 写真に注釈を追加</h2>
+            </div>
+            <div class="modal-body">
+                <div class="edit-canvas-container">
+                    <canvas id="annotation-canvas" class="edit-canvas"></canvas>
+                </div>
+                <div class="form-group">
+                    <label>描画ツール</label>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                        <button class="btn btn-secondary" onclick="app.setAnnotationTool('pen')" id="annotation-tool-pen">🖊️ ペン</button>
+                        <button class="btn btn-secondary" onclick="app.setAnnotationTool('arrow')" id="annotation-tool-arrow">➡️ 矢印</button>
+                        <button class="btn btn-secondary" onclick="app.setAnnotationTool('rectangle')" id="annotation-tool-rectangle">⬜ 四角</button>
+                        <button class="btn btn-secondary" onclick="app.setAnnotationTool('circle')" id="annotation-tool-circle">⭕ 丸</button>
+                        <button class="btn btn-secondary" onclick="app.setAnnotationTool('text')" id="annotation-tool-text">📝 テキスト</button>
+                        <button class="btn btn-secondary" onclick="app.setAnnotationTool('eraser')" id="annotation-tool-eraser">🧹 消しゴム</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>スタンプ</label>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                        <button class="btn btn-secondary" onclick="app.addStamp('OK')" style="background: #e8f5e9; color: #388e3c;">✅ OK</button>
+                        <button class="btn btn-secondary" onclick="app.addStamp('NG')" style="background: #ffebee; color: #d32f2f;">❌ NG</button>
+                        <button class="btn btn-secondary" onclick="app.addStamp('要確認')" style="background: #fff3e0; color: #f57c00;">⚠️ 要確認</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>線の太さ</label>
+                    <input type="range" id="annotation-line-width" min="2" max="15" value="3" oninput="app.setAnnotationLineWidth(this.value)">
+                </div>
+                <div class="form-group">
+                    <label>色</label>
+                    <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px;">
+                        <button onclick="app.setAnnotationColor('#ff0000')" style="background: #ff0000; height: 40px; border-radius: 8px; border: 2px solid #ddd;"></button>
+                        <button onclick="app.setAnnotationColor('#0000ff')" style="background: #0000ff; height: 40px; border-radius: 8px; border: 2px solid #ddd;"></button>
+                        <button onclick="app.setAnnotationColor('#00ff00')" style="background: #00ff00; height: 40px; border-radius: 8px; border: 2px solid #ddd;"></button>
+                        <button onclick="app.setAnnotationColor('#ffff00')" style="background: #ffff00; height: 40px; border-radius: 8px; border: 2px solid #ddd;"></button>
+                        <button onclick="app.setAnnotationColor('#000000')" style="background: #000000; height: 40px; border-radius: 8px; border: 2px solid #ddd;"></button>
+                        <button onclick="app.setAnnotationColor('#ffffff')" style="background: #ffffff; height: 40px; border-radius: 8px; border: 2px solid #333;"></button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeEditPhotoModal()">キャンセル</button>
+                <button class="btn btn-danger" onclick="app.clearAnnotationCanvas()">全消去</button>
+                <button class="btn btn-primary" onclick="app.saveAnnotatedPhoto()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Phase 7-1: ファイルアップロードモーダル -->
+    <div id="file-upload-modal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>📤 写真ファイルをアップロード</h2>
+            </div>
+            <div class="modal-body">
+                <!-- ドラッグ&ドロップエリア -->
+                <div id="drop-zone"
+                     ondrop="app.handleFileDrop(event)"
+                     ondragover="app.handleDragOver(event)"
+                     style="border: 2px dashed #667eea; border-radius: 12px; padding: 48px; text-align: center; background: #f5f7fa; margin-bottom: 24px; cursor: pointer;"
+                     onclick="document.getElementById('file-input').click()">
+                    <div style="font-size: 64px; margin-bottom: 16px;">📁</div>
+                    <h3 style="margin-bottom: 8px;">ファイルをドラッグ&ドロップ</h3>
+                    <p style="color: #666; margin-bottom: 16px;">または クリックしてファイルを選択</p>
+                    <input type="file" id="file-input" multiple accept="image/*" onchange="app.handleFileInput(event)" style="display: none;">
+                </div>
+
+                <!-- アップロード設定 -->
+                <div class="form-group">
+                    <label>案件 *</label>
+                    <select id="upload-project-select" required></select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label>📋 工程区分</label>
+                        <select id="upload-process-type">
+                            <option value="">選択なし</option>
+                            <option value="foundation">基礎</option>
+                            <option value="structure">躯体</option>
+                            <option value="finishing">仕上げ</option>
+                            <option value="completion">完成</option>
+                            <option value="inspection">検査</option>
+                            <option value="other">その他</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>🔧 工種</label>
+                        <select id="upload-work-type">
+                            <option value="">選択なし</option>
+                            <option value="architecture">建築</option>
+                            <option value="electrical">電気</option>
+                            <option value="plumbing">設備</option>
+                            <option value="civil">土木</option>
+                            <option value="landscape">外構</option>
+                            <option value="other">その他</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>📍 撮影箇所</label>
+                    <input type="text" id="upload-location" placeholder="例: A棟1階、外構東側">
+                </div>
+
+                <!-- プレビューエリア -->
+                <div style="margin-top: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h3>プレビュー (<span id="upload-count">0枚</span>)</h3>
+                    </div>
+                    <div id="upload-preview-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; max-height: 300px; overflow-y: auto;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📁</div>
+                            <p>ファイルをドラッグ&ドロップまたは選択してください</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeFileUploadModal()">キャンセル</button>
+                <button class="btn btn-primary" onclick="app.uploadFiles()">📤 アップロード開始</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- テンプレート管理モーダル -->
+    <div id="template-manager-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📝 テンプレート管理</h2>
+            </div>
+            <div class="modal-body">
+                <div id="templates-list" style="max-height: 400px; overflow-y: auto;">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📝</div>
+                        <p>保存されたテンプレートがありません</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeTemplateManager()">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .upload-preview-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .upload-preview-card img {
+            width: 100%;
+            aspect-ratio: 4/3;
+            object-fit: cover;
+        }
+
+        .upload-preview-info {
+            padding: 8px;
+        }
+
+        .upload-preview-info input {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        #drop-zone:hover {
+            background: #e8eaf6;
+            border-color: #5566d3;
+        }
+
+        /* ================================================
+           レスポンシブ対応: タブレット・PC版
+           ================================================ */
+
+        /* タブレット (768px以上) */
+        @media (min-width: 768px) {
+            .app {
+                max-width: 100%;
+                box-shadow: none;
+            }
+
+            header {
+                padding: 20px 32px;
+            }
+
+            header h1 {
+                font-size: 24px;
+            }
+
+            .tabs {
+                padding: 0 32px;
+            }
+
+            .tab {
+                padding: 20px;
+                font-size: 15px;
+            }
+
+            .content {
+                padding: 24px 32px;
+            }
+
+            .cards-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+            }
+
+            .modal-content {
+                max-width: 600px;
+            }
+        }
+
+        /* PC (1024px以上) */
+        @media (min-width: 1024px) {
+            .app {
+                max-width: 100%;
+            }
+
+            header {
+                padding: 24px 48px;
+            }
+
+            header h1 {
+                font-size: 28px;
+            }
+
+            .tabs {
+                padding: 0 48px;
+            }
+
+            .content {
+                max-width: 1600px;
+                margin: 0 auto;
+                padding: 32px 48px;
+            }
+
+            .cards-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 24px;
+            }
+
+            .modal-content {
+                max-width: 800px;
+            }
+        }
+
+        /* 大画面 (1440px以上) */
+        @media (min-width: 1440px) {
+            .cards-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .modal-content {
+                max-width: 1000px;
+            }
+        }
+    </style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="/app.js?v=2"></script>
+    <script src="/pwa-init.js?v=2"></script>
+</body>
+</html>
+修正

@@ -124,9 +124,10 @@ app.get('*', async (c) => {
   try {
     // Try to fetch from Workers Assets
     if (c.env.ASSETS) {
-      // Create a proper Request object for Workers Assets
-      const assetRequest = new Request(new URL(path, c.req.url), c.req.raw);
-      const assetResponse = await c.env.ASSETS.fetch(assetRequest);
+      // Use URL string format for Workers Assets (Cloudflare recommended format)
+      // See: https://developers.cloudflare.com/workers/static-assets/binding/
+      const assetUrl = `https://assets.local${path}`;
+      const assetResponse = await c.env.ASSETS.fetch(assetUrl);
 
       if (assetResponse.ok) {
         // Clone the response to modify headers
@@ -148,9 +149,9 @@ app.get('*', async (c) => {
     // If file not found and not a file request (no extension), try SPA fallback
     if (!path.includes('.')) {
       if (c.env.ASSETS) {
-        // Create Request object for SPA fallback
-        const indexRequest = new Request(new URL('/index.html', c.req.url), c.req.raw);
-        const indexResponse = await c.env.ASSETS.fetch(indexRequest);
+        // Use URL string format for SPA fallback
+        const indexUrl = "https://assets.local/index.html";
+        const indexResponse = await c.env.ASSETS.fetch(indexUrl);
         if (indexResponse.ok) {
           const response = new Response(indexResponse.body, indexResponse);
           response.headers.set('Content-Type', 'text/html; charset=utf-8');

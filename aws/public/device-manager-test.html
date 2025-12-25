@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeviceManager Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .device-switcher {
+            display: flex;
+            gap: 8px;
+        }
+
+        .device-switcher button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid transparent;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.2s;
+            min-width: 44px;
+        }
+
+        .device-switcher button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .device-switcher button.active {
+            background: rgba(255, 255, 255, 0.4);
+            border-color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .status {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .status dt {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .status dd {
+            margin: 0;
+        }
+
+        .visibility-test {
+            display: grid;
+            gap: 10px;
+        }
+
+        .test-item {
+            padding: 15px;
+            border-radius: 8px;
+            background: #f0f0f0;
+        }
+
+        .mobile-only {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+
+        .tablet-only {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+        }
+
+        .desktop-only {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+        }
+
+        /* Device-specific visibility */
+        body[data-device="mobile"] .desktop-only { display: none !important; }
+        body[data-device="mobile"] .tablet-only { display: none !important; }
+        body[data-device="tablet"] .mobile-only { display: none !important; }
+        body[data-device="tablet"] .desktop-only { display: none !important; }
+        body[data-device="desktop"] .mobile-only { display: none !important; }
+        body[data-device="desktop"] .tablet-only { display: none !important; }
+
+        .actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #764ba2;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>DeviceManager Test</h1>
+        <div class="device-switcher">
+            <button data-device="mobile" title="モバイル表示">📱</button>
+            <button data-device="tablet" title="タブレット表示">📟</button>
+            <button data-device="desktop" title="PC表示">💻</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>デバイス検出状態</h2>
+        <dl class="status">
+            <dt>現在のデバイス:</dt>
+            <dd id="current-device">-</dd>
+
+            <dt>画面サイズ:</dt>
+            <dd id="screen-size">-</dd>
+
+            <dt>User-Agent:</dt>
+            <dd id="user-agent" style="font-size: 12px; word-break: break-all;">-</dd>
+
+            <dt>タッチサポート:</dt>
+            <dd id="touch-support">-</dd>
+
+            <dt>ピクセル比:</dt>
+            <dd id="pixel-ratio">-</dd>
+
+            <dt>自動検出結果:</dt>
+            <dd id="auto-detected">-</dd>
+
+            <dt>保存済み設定:</dt>
+            <dd id="saved-preference">-</dd>
+        </dl>
+    </div>
+
+    <div class="card">
+        <h2>表示切り替えテスト</h2>
+        <p>現在選択されているデバイスタイプに応じて、対応するボックスのみが表示されます。</p>
+        <div class="visibility-test">
+            <div class="test-item mobile-only">
+                📱 <strong>モバイル専用コンテンツ</strong> - モバイル表示の時のみ表示
+            </div>
+            <div class="test-item tablet-only">
+                📟 <strong>タブレット専用コンテンツ</strong> - タブレット表示の時のみ表示
+            </div>
+            <div class="test-item desktop-only">
+                💻 <strong>デスクトップ専用コンテンツ</strong> - PC表示の時のみ表示
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>アクション</h2>
+        <div class="actions">
+            <button class="btn btn-primary" onclick="updateInfo()">状態を更新</button>
+            <button class="btn btn-secondary" onclick="clearPreference()">保存設定をクリア</button>
+            <button class="btn btn-secondary" onclick="testResize()">リサイズをシミュレート</button>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * DeviceManager - Automatic device detection and manual UI switching
+         */
+        class DeviceManager {
+            constructor() {
+                this.storageKey = 'preferredDevice';
+                this.init();
+            }
+
+            detectDevice() {
+                const ua = navigator.userAgent;
+                const width = window.innerWidth;
+                const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+                const pixelRatio = window.devicePixelRatio || 1;
+
+                const isMobileUA = /iPhone|iPod|Android.*Mobile/i.test(ua);
+                const isTabletUA = /iPad|Android(?!.*Mobile)/i.test(ua);
+
+                if (width < 768) {
+                    return 'mobile';
+                } else if (width < 1024) {
+                    if (isTabletUA || (hasTouch && pixelRatio > 1)) {
+                        return 'tablet';
+                    }
+                    return 'tablet';
+                } else {
+                    return 'desktop';
+                }
+            }
+
+            getSavedDevice() {
+                try {
+                    return localStorage.getItem(this.storageKey);
+                } catch (e) {
+                    console.warn('LocalStorage not available:', e);
+                    return null;
+                }
+            }
+
+            saveDevice(device) {
+                try {
+                    localStorage.setItem(this.storageKey, device);
+                    console.log('Device preference saved:', device);
+                    updateInfo();
+                } catch (e) {
+                    console.warn('Cannot save to localStorage:', e);
+                }
+            }
+
+            applyDevice(device) {
+                document.body.setAttribute('data-device', device);
+                this.updateSwitcherButtons(device);
+                console.log('Device applied:', device);
+                updateInfo();
+            }
+
+            updateSwitcherButtons(device) {
+                document.querySelectorAll('.device-switcher button').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.device === device);
+                });
+            }
+
+            init() {
+                const savedDevice = this.getSavedDevice();
+                const detectedDevice = this.detectDevice();
+                const device = savedDevice || detectedDevice;
+
+                this.applyDevice(device);
+
+                document.addEventListener('DOMContentLoaded', () => {
+                    document.querySelectorAll('.device-switcher button').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            const selectedDevice = btn.dataset.device;
+                            this.saveDevice(selectedDevice);
+                            this.applyDevice(selectedDevice);
+                        });
+                    });
+
+                    updateInfo();
+                });
+
+                let resizeTimer;
+                window.addEventListener('resize', () => {
+                    clearTimeout(resizeTimer);
+                    resizeTimer = setTimeout(() => {
+                        if (!this.getSavedDevice()) {
+                            const newDevice = this.detectDevice();
+                            this.applyDevice(newDevice);
+                        }
+                        updateInfo();
+                    }, 300);
+                });
+            }
+        }
+
+        const deviceManager = new DeviceManager();
+
+        function updateInfo() {
+            const currentDevice = document.body.getAttribute('data-device');
+            const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            const savedDevice = deviceManager.getSavedDevice();
+            const detectedDevice = deviceManager.detectDevice();
+
+            document.getElementById('current-device').textContent = currentDevice || '-';
+            document.getElementById('screen-size').textContent = `${window.innerWidth} x ${window.innerHeight}`;
+            document.getElementById('user-agent').textContent = navigator.userAgent;
+            document.getElementById('touch-support').textContent = hasTouch ? 'Yes' : 'No';
+            document.getElementById('pixel-ratio').textContent = window.devicePixelRatio || 1;
+            document.getElementById('auto-detected').textContent = detectedDevice;
+            document.getElementById('saved-preference').textContent = savedDevice || 'None';
+        }
+
+        function clearPreference() {
+            try {
+                localStorage.removeItem('preferredDevice');
+                alert('保存設定をクリアしました。ページを再読み込みします。');
+                location.reload();
+            } catch (e) {
+                alert('LocalStorageアクセスエラー: ' + e.message);
+            }
+        }
+
+        function testResize() {
+            alert('ブラウザウィンドウのサイズを変更して、自動検出の動作を確認してください。\n\n' +
+                  '保存済み設定がある場合は、リサイズしても切り替わりません。\n' +
+                  '保存設定をクリアしてからお試しください。');
+        }
+    </script>
+</body>
+</html>
