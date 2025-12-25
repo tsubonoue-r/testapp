@@ -1,0 +1,80 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 工事看板写真システム - Admin Dashboard API
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: nodejs20.x
+    Architectures:
+      - arm64
+    Environment:
+      Variables:
+        NODE_ENV: production
+        ENVIRONMENT: !Ref Environment
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues:
+      - production
+      - staging
+      - development
+    Description: Deployment environment
+
+Resources:
+  AdminDashboardApi:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: dist/lambda.handler
+      Description: Admin Dashboard API for construction signboard photo system
+      Events:
+        ApiEvent:
+          Type: HttpApi
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+        RootEvent:
+          Type: HttpApi
+          Properties:
+            Path: /
+            Method: ANY
+      Policies:
+        - AWSLambdaBasicExecutionRole
+      Tags:
+        Project: testapp
+        Component: admin-dashboard
+
+  # API Gateway HTTP API
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins:
+          - '*'
+        AllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - PATCH
+          - OPTIONS
+        AllowHeaders:
+          - '*'
+        MaxAge: 300
+
+Outputs:
+  ApiEndpoint:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/"
+
+  FunctionArn:
+    Description: "Lambda Function ARN"
+    Value: !GetAtt AdminDashboardApi.Arn
+
+  FunctionName:
+    Description: "Lambda Function Name"
+    Value: !Ref AdminDashboardApi

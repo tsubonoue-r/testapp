@@ -15,6 +15,7 @@ import projects from './worker-routes/projects.js';
 import signboards from './worker-routes/signboards.js';
 import photos from './worker-routes/photos.js';
 import lark from './worker-routes/lark.js';
+import admin from './worker-routes/admin.js';
 
 // Honoアプリケーション
 const app = new Hono<{ Bindings: Env; Variables: HonoVariables }>();
@@ -94,6 +95,7 @@ app.route('/api/projects', projects);
 app.route('/api/signboards', signboards);
 app.route('/api/photos', photos);
 app.route('/api/lark', lark);
+app.route('/api/admin', admin);
 
 /**
  * Static File Serving

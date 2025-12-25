@@ -8,8 +8,11 @@
     "server": "tsx src/server.ts",
     "build": "tsc",
     "build:worker": "tsc && npx wrangler deploy --dry-run",
+    "build:lambda": "tsc && cp -r node_modules dist/ && cp package.json dist/",
     "deploy": "npx wrangler deploy",
     "deploy:preview": "npx wrangler deploy --env preview",
+    "deploy:aws": "npm run build:lambda && sam build && sam deploy",
+    "deploy:aws:guided": "npm run build:lambda && sam build && sam deploy --guided",
     "cf:dev": "npx wrangler dev",
     "cf:tail": "npx wrangler tail",
     "test": "vitest",
@@ -24,6 +27,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@hono/node-server": "^1.19.7",
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^11.0.0",
     "cors": "^2.8.5",
@@ -33,7 +37,9 @@
     "multer": "^1.4.5-lts.1"
   },
   "devDependencies": {
+    "@aws-sdk/client-lambda": "^3.958.0",
     "@cloudflare/workers-types": "^4.20241127.0",
+    "@types/aws-lambda": "^8.10.159",
     "@types/bcryptjs": "^2.4.6",
     "@types/better-sqlite3": "^7.6.9",
     "@types/cors": "^2.8.17",
