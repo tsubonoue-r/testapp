@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#667eea">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -11,75 +11,27 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
     <link rel="apple-touch-icon" href="/icon-192.png">
     <title>工事看板写真システム</title>
-
-    <!-- jsPDF for PDF generation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
     <style>
-        /* ===================================
-           Base Styles
-           =================================== */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        h1, h2, h3, h4, h5, h6 {
-            color: #2c3e50;
-            font-weight: 600;
-        }
-
-        :root {
-            --primary-color: #667eea;
-            --primary-dark: #764ba2;
-            --secondary-color: #f5f7fa;
-            --text-color: #2c3e50;
-            --text-light: #666;
-            --border-color: #e0e0e0;
-            --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
-            --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
-            --radius-sm: 8px;
-            --radius-md: 12px;
-            --radius-lg: 16px;
-            --header-height: 64px;
-            --tab-height: 56px;
-        }
-
-        html, body {
-            overflow-x: hidden;
-            width: 100%;
-            margin: 0;
-            padding: 0;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif;
-            background: var(--secondary-color);
-            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', sans-serif;
+            background: #f5f5f5;
+            color: #333;
             transition: background 0.3s, color 0.3s;
-            line-height: 1.6;
-            font-size: 15px;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
         }
 
-        /* ===================================
-           Dark Mode
-           =================================== */
+        /* Phase 7-6: ダークモード */
         body.dark-mode {
-            --secondary-color: #1a1a1a;
-            --text-color: #e0e0e0;
-            --text-light: #a0aec0;
-            --border-color: #4a5568;
             background: #1a1a1a;
             color: #e0e0e0;
         }
 
-        body.dark-mode .app,
-        body.dark-mode .content {
+        body.dark-mode .app {
             background: #1a1a1a;
         }
 
@@ -89,6 +41,11 @@
 
         body.dark-mode .tabs {
             background: #2d3748;
+            border-bottom-color: #4a5568;
+        }
+
+        body.dark-mode .tab {
+            color: #a0aec0;
         }
 
         body.dark-mode .tab.active {
@@ -96,10 +53,24 @@
             border-bottom-color: #90cdf4;
         }
 
-        body.dark-mode .card,
-        body.dark-mode .modal-content {
+        body.dark-mode .content {
+            background: #1a1a1a;
+        }
+
+        body.dark-mode .card {
             background: #2d3748;
             border-color: #4a5568;
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .btn-secondary {
+            background: #4a5568;
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .modal-content {
+            background: #2d3748;
+            color: #e0e0e0;
         }
 
         body.dark-mode .form-group input,
@@ -110,257 +81,88 @@
             border-color: #4a5568;
         }
 
-        body.dark-mode .sidebar {
-            background: linear-gradient(180deg, #1a202c 0%, #2d3748 100%);
-            border-right-color: #4a5568;
+        body.dark-mode .badge {
+            filter: brightness(0.8);
         }
 
-        body.dark-mode .sidebar-item {
-            color: rgba(255, 255, 255, 0.9);
+        body.dark-mode .photo-card {
+            background: #2d3748;
         }
 
-        body.dark-mode .sidebar-item:hover {
-            background: rgba(255, 255, 255, 0.1);
+        body.dark-mode table {
+            background: #2d3748;
+            color: #e0e0e0;
         }
 
-        body.dark-mode .sidebar-item.active {
-            background: rgba(102, 126, 234, 0.3);
-            border-left: 3px solid #90cdf4;
-            color: white;
+        body.dark-mode table thead {
+            background: #1a1a1a;
         }
 
-        body.dark-mode .sidebar-title {
-            color: rgba(255, 255, 255, 0.5);
+        body.dark-mode table td {
+            border-color: #4a5568;
         }
 
-        /* ===================================
-           Mobile-First Layout (Default)
-           =================================== */
+        body.dark-mode #dark-mode-toggle:hover {
+            background: rgba(255,255,255,0.3) !important;
+        }
+
         .app {
-            width: 100%;
-            max-width: 100vw;
-            min-height: 100vh;
+            max-width: 428px;
+            margin: 0 auto;
             background: white;
-            position: relative;
-            overflow-x: hidden;
+            min-height: 100vh;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            padding-bottom: 80px;
         }
 
-        /* Header */
         header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 16px;
-            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
-            position: sticky;
-            top: 0;
-            width: 100%;
-            z-index: 100;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex: 1;
-            min-width: 0;
-        }
-
-        .logo {
-            font-size: 28px;
-            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
         header h1 {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 600;
-            margin-bottom: 2px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            color: white;
+            margin-bottom: 4px;
         }
 
         header p {
-            font-size: 12px;
-            opacity: 0.9;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 8px;
-            flex-shrink: 0;
-            align-items: center;
-        }
-
-        .header-btn {
-            padding: 8px 12px;
-            border: 1px solid rgba(255,255,255,0.3);
-            background: rgba(255,255,255,0.1);
-            color: white;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
             font-size: 13px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            text-decoration: none;
-            white-space: nowrap;
+            opacity: 0.9;
         }
 
-        .header-btn:hover {
-            background: rgba(255,255,255,0.2);
-            transform: translateY(-1px);
-        }
-
-        .header-btn:active {
-            transform: translateY(0);
-        }
-
-        /* Hamburger Menu (Mobile) */
-        .hamburger {
-            display: block;
-            width: 28px;
-            height: 28px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 4px;
-        }
-
-        .hamburger span {
-            display: block;
-            width: 100%;
-            height: 2px;
-            background: white;
-            margin: 4px 0;
-            transition: all 0.3s;
-        }
-
-        /* Sidebar (Hidden on mobile) */
-        .sidebar {
-            position: fixed;
-            left: 0;
-            top: var(--header-height);
-            width: 280px;
-            height: calc(100vh - var(--header-height));
-            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
-            border-right: 1px solid var(--border-color);
-            overflow-y: auto;
-            overflow-x: hidden;
-            z-index: 90;
-            transform: translateX(-100%);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
-            color: white;
-
-            /* Custom scrollbar */
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
-        }
-
-        .sidebar::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .sidebar::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 3px;
-        }
-
-        .sidebar::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .sidebar.active {
-            display: block;
-            transform: translateX(0);
-        }
-
-        .sidebar-section {
-            padding: 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .sidebar-section:last-child {
-            padding-bottom: 80px; /* Last section padding for scrolling */
-        }
-
-        .sidebar-title {
-            font-size: 12px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.6);
-            text-transform: uppercase;
-            margin-bottom: 12px;
-            letter-spacing: 0.5px;
-        }
-
-        .sidebar-item {
-            padding: 12px;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            margin: 4px 0;
-            color: rgba(255, 255, 255, 0.9);
-        }
-
-        .sidebar-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-            padding-left: 20px;
-            transform: translateX(4px);
-        }
-
-        .sidebar-item.active {
-            background: rgba(255, 255, 255, 0.15);
-            border-left: 3px solid #667eea;
-            color: white;
-            font-weight: 600;
-        }
-
-        /* Tabs */
         .tabs {
             display: flex;
             background: white;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid #e0e0e0;
             position: sticky;
-            top: var(--header-height);
-            width: 100%;
-            z-index: 80;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
+            top: 0;
+            z-index: 10;
         }
 
         .tab {
             flex: 1;
-            min-width: 80px;
             padding: 16px;
             text-align: center;
             background: none;
             border: none;
             font-size: 14px;
-            color: var(--text-light);
+            color: #666;
             cursor: pointer;
             transition: all 0.3s;
             border-bottom: 2px solid transparent;
-            white-space: nowrap;
         }
 
         .tab.active {
-            color: var(--primary-color);
-            border-bottom-color: var(--primary-color);
+            color: #667eea;
+            border-bottom-color: #667eea;
             font-weight: 600;
         }
 
-        /* Content */
         .content {
-            padding: 24px;
-            background: var(--secondary-color);
-            min-height: calc(100vh - var(--header-height) - var(--tab-height));
-            width: 100%;
-            box-sizing: border-box;
+            padding: 16px;
         }
 
         .section {
@@ -371,53 +173,30 @@
             display: block;
         }
 
-        /* Cards */
         .card {
             background: white;
-            border-radius: var(--radius-md);
+            border-radius: 12px;
             padding: 16px;
             margin-bottom: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            border: 1px solid var(--border-color);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 1px solid #e0e0e0;
         }
 
         .card h3 {
             font-size: 16px;
             margin-bottom: 8px;
-            color: #2c3e50;
-            font-weight: 600;
+            color: #333;
         }
 
         .card-meta {
             display: flex;
             gap: 12px;
             font-size: 13px;
-            color: var(--text-light);
+            color: #666;
             margin-bottom: 8px;
             flex-wrap: wrap;
         }
 
-        .card-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 12px;
-        }
-
-        .card-actions button {
-            flex: 1;
-            padding: 8px;
-            font-size: 14px;
-        }
-
-        /* Badge */
         .badge {
             display: inline-block;
             padding: 4px 12px;
@@ -441,31 +220,23 @@
             color: #388e3c;
         }
 
-        /* Photo Grid */
         .photo-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr));
-            gap: 12px;
-            margin-top: 16px;
-            width: 100%;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 12px;
         }
 
         .photo-item {
             aspect-ratio: 1;
             background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
-            border-radius: var(--radius-sm);
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #999;
             font-size: 32px;
             overflow: hidden;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .photo-item:hover {
-            transform: scale(1.05);
         }
 
         .photo-item img {
@@ -474,38 +245,30 @@
             object-fit: cover;
         }
 
-        /* Buttons */
         .btn {
             width: 100%;
-            padding: 14px;
+            padding: 16px;
             border: none;
-            border-radius: var(--radius-md);
-            font-size: 15px;
+            border-radius: 12px;
+            font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s;
             margin-top: 8px;
-            touch-action: manipulation;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
         }
 
         .btn-primary:active {
-            transform: translateY(0);
+            transform: translateY(2px);
         }
 
         .btn-secondary {
-            background: var(--secondary-color);
-            color: var(--text-color);
+            background: #f5f5f5;
+            color: #333;
         }
 
         .btn-danger {
@@ -513,15 +276,25 @@
             color: white;
         }
 
-        /* FAB (Floating Action Button) */
+        .empty-state {
+            text-align: center;
+            padding: 48px 16px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
         .fab {
             position: fixed;
             bottom: 24px;
-            right: 24px;
+            right: max(calc((100vw - 428px) / 2 + 24px), 24px);
             width: 56px;
             height: 56px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
             font-size: 24px;
@@ -531,15 +304,11 @@
             z-index: 100;
         }
 
-        .fab:hover {
-            transform: scale(1.1);
-        }
-
         .fab:active {
-            transform: scale(0.95);
+            transform: scale(0.9);
         }
 
-        /* Modal */
+        /* モーダル */
         .modal {
             display: none;
             position: fixed;
@@ -551,7 +320,6 @@
             z-index: 1000;
             align-items: center;
             justify-content: center;
-            backdrop-filter: blur(4px);
         }
 
         .modal.active {
@@ -560,19 +328,17 @@
 
         .modal-content {
             background: white;
-            max-width: 500px;
+            max-width: 400px;
             width: 90%;
-            max-width: min(500px, 90vw);
-            border-radius: var(--radius-lg);
+            border-radius: 16px;
             overflow: hidden;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: var(--shadow-lg);
         }
 
         .modal-header {
             padding: 20px;
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
 
@@ -586,7 +352,6 @@
 
         .form-group {
             margin-bottom: 16px;
-            width: 100%;
         }
 
         .form-group label {
@@ -594,7 +359,7 @@
             margin-bottom: 8px;
             font-size: 14px;
             font-weight: 500;
-            color: var(--text-color);
+            color: #333;
         }
 
         .form-group input,
@@ -602,19 +367,10 @@
         .form-group select {
             width: 100%;
             padding: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-sm);
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
             font-size: 14px;
             font-family: inherit;
-            transition: border-color 0.3s;
-            box-sizing: border-box;
-        }
-
-        .form-group input:focus,
-        .form-group textarea:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: var(--primary-color);
         }
 
         .form-group textarea {
@@ -632,13 +388,13 @@
             flex: 1;
         }
 
-        /* Camera UI */
+        /* カメラUI */
         .camera-container {
             position: relative;
             width: 100%;
             aspect-ratio: 4/3;
             background: #000;
-            border-radius: var(--radius-sm);
+            border-radius: 8px;
             overflow: hidden;
             margin-bottom: 16px;
         }
@@ -654,6 +410,52 @@
             display: none;
         }
 
+        .signboard-overlay {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: #fff8e1;
+            border: 3px solid #f57c00;
+            border-radius: 8px;
+            padding: 12px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .signboard-overlay h3 {
+            font-size: 14px;
+            color: #e65100;
+            margin-bottom: 6px;
+            border-bottom: 2px solid #f57c00;
+            padding-bottom: 4px;
+        }
+
+        .signboard-overlay .content {
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .signboard-overlay .content div {
+            margin-bottom: 2px;
+        }
+
+        /* 看板編集UI */
+        .edit-canvas-container {
+            position: relative;
+            width: 100%;
+            background: #fff8e1;
+            border: 3px solid #f57c00;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .edit-canvas {
+            width: 100%;
+            display: block;
+            cursor: crosshair;
+        }
+
         .camera-controls {
             display: flex;
             gap: 8px;
@@ -663,77 +465,40 @@
         .camera-btn {
             padding: 12px 24px;
             border: none;
-            border-radius: var(--radius-sm);
+            border-radius: 8px;
             font-size: 16px;
             cursor: pointer;
-            background: var(--primary-color);
+            background: #667eea;
             color: white;
-            transition: all 0.3s;
         }
 
-        .camera-btn:hover {
-            background: var(--primary-dark);
-        }
-
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 48px 16px;
-            color: var(--text-light);
-        }
-
-        .empty-state-icon {
-            font-size: 64px;
-            margin-bottom: 16px;
-        }
-
-        /* Loading */
         .loading {
             text-align: center;
             padding: 20px;
-            color: var(--text-light);
+            color: #666;
         }
 
-        /* Dashboard Stats */
-        .dashboard-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr));
-            gap: 12px;
-            margin-bottom: 24px;
-            width: 100%;
+        .card-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
         }
 
-        .stat-card {
-            background: white;
-            padding: 16px;
-            border-radius: var(--radius-md);
-            box-shadow: var(--shadow-sm);
-            text-align: center;
+        .card-actions button {
+            flex: 1;
+            padding: 8px;
+            font-size: 14px;
         }
 
-        .stat-value {
-            font-size: 32px;
-            font-weight: 700;
-            color: var(--primary-color);
-            margin-bottom: 4px;
-        }
+        /* ================================================
+           レスポンシブ対応: タブレット・PC版
+           ================================================ */
 
-        .stat-label {
-            font-size: 13px;
-            color: var(--text-light);
-        }
-
-        /* ===================================
-           Tablet Layout (768px - 1023px)
-           =================================== */
-        @media (min-width: 768px) and (max-width: 1023px) {
-            :root {
-                --header-height: 72px;
-                --sidebar-width: 280px;
-            }
-
+        /* タブレット (768px以上) */
+        @media (min-width: 768px) {
             .app {
                 max-width: 100%;
+                box-shadow: none;
             }
 
             header {
@@ -741,75 +506,34 @@
             }
 
             header h1 {
-                font-size: 22px;
-            }
-
-            header p {
-                font-size: 14px;
-            }
-
-            .logo {
-                font-size: 36px;
-            }
-
-            .hamburger {
-                display: none;
-            }
-
-            .sidebar {
-                display: block;
-                transform: translateX(0);
-                width: var(--sidebar-width);
-            }
-
-            .content {
-                margin-left: var(--sidebar-width);
-                width: calc(100% - var(--sidebar-width));
-                padding: 24px;
+                font-size: 24px;
             }
 
             .tabs {
-                margin-left: var(--sidebar-width);
-                width: calc(100% - var(--sidebar-width));
+                padding: 0 32px;
             }
 
-            .photo-grid {
-                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-                gap: 16px;
-            }
-
-            .card {
+            .tab {
                 padding: 20px;
+                font-size: 15px;
             }
 
-            /* Camera FAB is visible on tablet */
-            .fab {
-                right: 32px;
-                bottom: 32px;
-                width: 64px;
-                height: 64px;
-                font-size: 28px;
+            .content {
+                padding: 24px 32px;
+            }
+
+            .cards-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
             }
 
             .modal-content {
                 max-width: 600px;
             }
-
-            .dashboard-stats {
-                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-                gap: 16px;
-            }
         }
 
-        /* ===================================
-           Desktop Layout (1024px+)
-           =================================== */
+        /* PC (1024px以上) */
         @media (min-width: 1024px) {
-            :root {
-                --header-height: 80px;
-                --sidebar-width: 280px;
-            }
-
             .app {
                 max-width: 100%;
             }
@@ -819,266 +543,37 @@
             }
 
             header h1 {
-                font-size: 24px;
-            }
-
-            .logo {
-                font-size: 40px;
-            }
-
-            .sidebar {
-                width: var(--sidebar-width);
-            }
-
-            .content {
-                margin-left: var(--sidebar-width);
-                width: calc(100% - var(--sidebar-width));
-                padding: 32px;
-                max-width: calc(100vw - var(--sidebar-width));
+                font-size: 28px;
             }
 
             .tabs {
-                margin-left: var(--sidebar-width);
-                width: calc(100% - var(--sidebar-width));
+                padding: 0 48px;
             }
 
-            .photo-grid {
-                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-                gap: 20px;
+            .content {
+                max-width: 1600px;
+                margin: 0 auto;
+                padding: 32px 48px;
             }
 
-            .card {
-                padding: 24px;
-            }
-
-            .card:hover {
-                transform: translateY(-4px);
-            }
-
-            .btn:hover {
-                transform: translateY(-2px);
-            }
-
-            /* Hide camera FAB on desktop (PC version) */
-            .fab {
-                display: none !important;
+            .cards-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 24px;
             }
 
             .modal-content {
-                max-width: 700px;
-            }
-
-            .dashboard-stats {
-                grid-template-columns: repeat(4, 1fr);
-                gap: 20px;
-            }
-
-            /* Desktop-specific enhancements */
-            .header-btn {
-                font-size: 14px;
-                padding: 10px 16px;
-            }
-
-            .form-group input,
-            .form-group textarea,
-            .form-group select {
-                padding: 14px;
-            }
-
-            /* Enhanced hover effects for desktop */
-            .sidebar-item:hover {
-                background: rgba(255, 255, 255, 0.15);
-            }
-
-            .btn-primary:hover {
-                box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5);
+                max-width: 800px;
             }
         }
 
-        /* ===================================
-           Large Desktop (1440px+)
-           =================================== */
+        /* 大画面 (1440px以上) */
         @media (min-width: 1440px) {
-            :root {
-                --sidebar-width: 280px;
-                --content-max-width: 1400px;
+            .cards-grid {
+                grid-template-columns: repeat(4, 1fr);
             }
 
-            .content {
-                margin-left: var(--sidebar-width);
-                width: calc(100% - var(--sidebar-width));
-                max-width: var(--content-max-width);
-                padding: 40px;
-            }
-
-            .tabs {
-                margin-left: var(--sidebar-width);
-                width: calc(100% - var(--sidebar-width));
-                max-width: calc(var(--content-max-width) + var(--sidebar-width));
-            }
-
-            .sidebar {
-                width: var(--sidebar-width);
-            }
-        }
-
-        /* ===================================
-           Touch Optimization (Mobile)
-           =================================== */
-        @media (max-width: 767px) {
-            /* Larger tap targets for mobile */
-            .btn,
-            .tab,
-            .card-actions button {
-                min-height: 44px;
-            }
-
-            .header-btn {
-                min-height: 36px;
-            }
-
-            /* Prevent text selection on buttons */
-            .btn, .tab, .header-btn, .fab {
-                -webkit-tap-highlight-color: transparent;
-                user-select: none;
-            }
-
-            /* Mobile-specific spacing */
-            .card {
-                margin-bottom: 16px;
-            }
-
-            /* Hide hover effects on touch devices */
-            .card:hover {
-                transform: none;
-            }
-
-            /* Mobile sidebar overlay */
-            .sidebar {
-                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
-            }
-
-            /* Hamburger is visible on mobile */
-            .hamburger {
-                display: block;
-            }
-
-            /* Content has no left margin on mobile */
-            .content {
-                margin-left: 0;
-                width: 100%;
-            }
-
-            .tabs {
-                margin-left: 0;
-                width: 100%;
-            }
-
-            /* Smaller header text on mobile */
-            header h1 {
-                font-size: 16px;
-            }
-
-            header p {
-                font-size: 11px;
-            }
-
-            .logo {
-                font-size: 24px;
-            }
-        }
-
-        /* ===================================
-           Print Styles
-           =================================== */
-        @media print {
-            header,
-            .tabs,
-            .fab,
-            .modal,
-            .sidebar {
-                display: none !important;
-            }
-
-            .content {
-                margin: 0;
-                padding: 0;
-            }
-
-            .card {
-                break-inside: avoid;
-                page-break-inside: avoid;
-            }
-        }
-
-        /* ===================================
-           Accessibility
-           =================================== */
-        @media (prefers-reduced-motion: reduce) {
-            * {
-                animation: none !important;
-                transition: none !important;
-            }
-        }
-
-        /* Focus visible for keyboard navigation */
-        *:focus-visible {
-            outline: 2px solid var(--primary-color);
-            outline-offset: 2px;
-        }
-
-        /* ===================================
-           Device Switcher
-           =================================== */
-        .device-switcher {
-            display: flex;
-            gap: 8px;
-            margin-right: 8px;
-            flex-wrap: nowrap;
-        }
-
-        .device-switcher button {
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid transparent;
-            color: white;
-            padding: 8px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 20px;
-            transition: all 0.2s;
-            min-width: 44px;
-            flex-shrink: 0;
-        }
-
-        .device-switcher button:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        .device-switcher button.active {
-            background: rgba(255, 255, 255, 0.4);
-            border-color: white;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Device-specific visibility classes */
-        body[data-device="mobile"] .desktop-only { display: none !important; }
-        body[data-device="mobile"] .tablet-only { display: none !important; }
-        body[data-device="tablet"] .mobile-only { display: none !important; }
-        body[data-device="tablet"] .desktop-only { display: none !important; }
-        body[data-device="desktop"] .mobile-only { display: none !important; }
-        body[data-device="desktop"] .tablet-only { display: none !important; }
-
-        /* Mobile device switcher adjustments */
-        @media (max-width: 767px) {
-            .device-switcher {
-                gap: 4px;
-                margin-right: 4px;
-            }
-
-            .device-switcher button {
-                padding: 6px 8px;
-                font-size: 16px;
-                min-width: 36px;
+            .modal-content {
+                max-width: 1000px;
             }
         }
     </style>
@@ -1086,128 +581,190 @@
 <body>
     <div class="app">
         <header>
-            <div class="header-left">
-                <button class="hamburger" onclick="app.toggleSidebar()" aria-label="Menu">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
-                <div class="logo">📸</div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <h1>工事看板写真システム</h1>
+                    <h1>📸 工事看板写真システム</h1>
                     <p id="header-subtitle">案件と写真を簡単管理</p>
                 </div>
-            </div>
-            <div class="header-actions">
-                <div class="device-switcher">
-                    <button data-device="mobile" title="モバイル表示">📱</button>
-                    <button data-device="tablet" title="タブレット表示">📟</button>
-                    <button data-device="desktop" title="PC表示">💻</button>
-                </div>
-                <button class="header-btn" onclick="app.toggleDarkMode()" title="ダークモード切替">🌙</button>
-                <button class="header-btn" onclick="app.showHelp()" title="ヘルプ">❓</button>
+                <button id="dark-mode-toggle" onclick="app.toggleDarkMode()"
+                        style="background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 44px; height: 44px; font-size: 24px; cursor: pointer; transition: all 0.3s;">
+                    🌙
+                </button>
             </div>
         </header>
 
-        <!-- Sidebar (Tablet/Desktop) -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-section">
-                <div class="sidebar-title">ダッシュボード</div>
-                <div class="sidebar-item active" onclick="app.showDashboard()">
-                    📊 概要
-                </div>
-            </div>
-            <div class="sidebar-section">
-                <div class="sidebar-title">案件管理</div>
-                <div class="sidebar-item" onclick="app.switchTab('projects')">
-                    📁 全案件
-                </div>
-                <div class="sidebar-item" onclick="app.filterProjects('in_progress')">
-                    🚧 進行中
-                </div>
-                <div class="sidebar-item" onclick="app.filterProjects('completed')">
-                    ✅ 完了
-                </div>
-            </div>
-            <div class="sidebar-section">
-                <div class="sidebar-title">写真管理</div>
-                <div class="sidebar-item" onclick="app.switchTab('photos')">
-                    🖼️ 全写真
-                </div>
-                <div class="sidebar-item" onclick="app.showRecentPhotos()">
-                    🆕 最近の写真
-                </div>
-            </div>
-            <div class="sidebar-section">
-                <div class="sidebar-title">設定</div>
-                <div class="sidebar-item" onclick="app.exportData()">
-                    💾 データエクスポート
-                </div>
-            </div>
-        </aside>
-
         <div class="tabs">
-            <button class="tab active" data-tab="dashboard" onclick="app.switchTab('dashboard')">
-                <span class="tab-icon">📊</span> ダッシュボード
-            </button>
-            <button class="tab" data-tab="projects" onclick="app.switchTab('projects')">
-                <span class="tab-icon">📁</span> 案件
-            </button>
-            <button class="tab" data-tab="signboards" onclick="app.switchTab('signboards')">
-                <span class="tab-icon">🪧</span> 看板
-            </button>
-            <button class="tab" data-tab="photos" onclick="app.switchTab('photos')">
-                <span class="tab-icon">📷</span> 写真
-            </button>
+            <button class="tab active" data-tab="dashboard">📊 ダッシュボード</button>
+            <button class="tab" data-tab="projects">案件</button>
+            <button class="tab" data-tab="signboards">看板</button>
+            <button class="tab" data-tab="photos">写真</button>
         </div>
 
         <div class="content">
-            <!-- Dashboard Section -->
+            <!-- ダッシュボードセクション -->
             <div id="dashboard" class="section active">
-                <div class="dashboard-stats">
-                    <div class="stat-card">
-                        <div class="stat-value" id="stat-projects">0</div>
-                        <div class="stat-label">案件数</div>
+                <h2 style="margin-bottom: 20px;">📊 統計ダッシュボード</h2>
+
+                <!-- サマリーカード -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                    <div class="card" style="text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        <h3 style="font-size: 32px; margin-bottom: 8px;" id="stat-projects">0</h3>
+                        <p style="opacity: 0.9;">案件数</p>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="stat-signboards">0</div>
-                        <div class="stat-label">看板数</div>
+                    <div class="card" style="text-align: center; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                        <h3 style="font-size: 32px; margin-bottom: 8px;" id="stat-photos">0</h3>
+                        <p style="opacity: 0.9;">写真総数</p>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="stat-photos">0</div>
-                        <div class="stat-label">写真数</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="stat-active">0</div>
-                        <div class="stat-label">進行中</div>
+                    <div class="card" style="text-align: center; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+                        <h3 style="font-size: 32px; margin-bottom: 8px;" id="stat-signboards">0</h3>
+                        <p style="opacity: 0.9;">工事看板数</p>
                     </div>
                 </div>
-                <h2 style="margin-bottom: 16px;">最近のアクティビティ</h2>
-                <div id="recent-activity"></div>
+
+                <!-- 案件別写真数 -->
+                <div class="card">
+                    <h3>📊 案件別写真数</h3>
+                    <div id="project-stats" style="margin-top: 16px;"></div>
+                </div>
+
+                <!-- カテゴリー別集計 -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 16px;">
+                    <div class="card">
+                        <h3>🏗️ 工程区分別</h3>
+                        <div id="category-process-stats" style="margin-top: 16px;"></div>
+                    </div>
+                    <div class="card">
+                        <h3>🔧 工種別</h3>
+                        <div id="category-worktype-stats" style="margin-top: 16px;"></div>
+                    </div>
+                </div>
+
+                <!-- 最近の活動 -->
+                <div class="card" style="margin-top: 16px;">
+                    <h3>📅 最近の活動</h3>
+                    <div id="recent-activity" style="margin-top: 16px;"></div>
+                </div>
             </div>
 
-            <!-- Projects Section -->
+            <!-- 案件セクション -->
             <div id="projects" class="section">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="show-archived-projects" onchange="app.toggleArchivedProjects()" style="width: 20px; height: 20px;">
+                        <span>📦 アーカイブ済みを表示</span>
+                    </label>
+                </div>
                 <div id="projects-list"></div>
-                <button class="btn btn-primary" onclick="app.showCreateProjectModal()">➕ 新しい案件を作成</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-primary" onclick="app.showCreateProjectModal()" style="flex: 1;">➕ 新しい案件を作成</button>
+                    <button class="btn btn-secondary" onclick="app.showTemplateManager()" style="flex: 1; background: #9c27b0; color: white;">📝 テンプレート管理</button>
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 8px;">
+                    <button class="btn btn-secondary" onclick="app.exportProjects('json')" style="flex: 1;">📥 JSON</button>
+                    <button class="btn btn-secondary" onclick="app.exportProjects('csv')" style="flex: 1;">📥 CSV</button>
+                </div>
             </div>
 
-            <!-- Signboards Section -->
+            <!-- 看板セクション -->
             <div id="signboards" class="section">
                 <div id="signboards-list"></div>
                 <button class="btn btn-primary" onclick="app.showCreateSignboardModal()">➕ 新しい看板を作成</button>
             </div>
 
-            <!-- Photos Section -->
+            <!-- 写真セクション -->
             <div id="photos" class="section">
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label>🔍 全文検索</label>
+                    <input type="text" id="photo-search-query" placeholder="キャプション、カテゴリー、撮影箇所で検索..." oninput="app.filterPhotos()">
+                </div>
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label>🏗️ 案件で絞り込み</label>
+                    <select id="photo-project-filter" onchange="app.filterPhotos()">
+                        <option value="">すべての案件</option>
+                    </select>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px;">
+                    <div class="form-group" style="margin: 0;">
+                        <label>📋 工程区分</label>
+                        <select id="photo-category-process-filter" onchange="app.filterPhotos()">
+                            <option value="">すべて</option>
+                            <option value="foundation">基礎</option>
+                            <option value="structure">躯体</option>
+                            <option value="finishing">仕上げ</option>
+                            <option value="completion">完成</option>
+                            <option value="inspection">検査</option>
+                            <option value="other">その他</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label>📍 撮影箇所</label>
+                        <input type="text" id="photo-category-location-filter" placeholder="箇所で検索" oninput="app.filterPhotos()">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label>🔧 工種</label>
+                        <select id="photo-category-worktype-filter" onchange="app.filterPhotos()">
+                            <option value="">すべて</option>
+                            <option value="architecture">建築</option>
+                            <option value="electrical">電気</option>
+                            <option value="plumbing">設備</option>
+                            <option value="civil">土木</option>
+                            <option value="landscape">外構</option>
+                            <option value="other">その他</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- ソート設定 & 表示切り替え -->
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 16px;">
+                    <div class="form-group" style="margin: 0;">
+                        <label>📊 ソート基準</label>
+                        <select id="photo-sort-by" onchange="app.sortPhotos()">
+                            <option value="date-desc">撮影日時（新しい順）</option>
+                            <option value="date-asc">撮影日時（古い順）</option>
+                            <option value="category">カテゴリー順</option>
+                            <option value="filename-asc">ファイル名（昇順）</option>
+                            <option value="filename-desc">ファイル名（降順）</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label>👁️ 表示形式</label>
+                        <select id="photo-view-mode" onchange="app.changeViewMode()">
+                            <option value="grid">グリッド</option>
+                            <option value="list">リスト</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 16px;">
+                    <button class="btn btn-primary" onclick="app.showFileUploadModal()">📤 アップロード</button>
+                    <button class="btn btn-secondary" onclick="app.showPDFSettingsModal()">📄 PDF</button>
+                    <button class="btn btn-secondary" onclick="app.exportPhotos('json')">📥 JSON</button>
+                    <button class="btn btn-secondary" onclick="app.exportPhotos('csv')">📥 CSV</button>
+                    <button class="btn btn-secondary" onclick="app.toggleSelectionMode()" id="selection-mode-btn">✓ 選択</button>
+                </div>
+
+                <!-- 選択ツールバー（選択モード時のみ表示） -->
+                <div id="selection-toolbar" style="display: none; background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <span id="selection-count" style="font-weight: 600;">0枚選択中</span>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-secondary" onclick="app.selectAllPhotos()" style="padding: 8px 16px;">全選択</button>
+                            <button class="btn btn-primary" onclick="app.compareSelectedPhotos()" id="compare-btn" style="padding: 8px 16px; display: none;">📊 比較</button>
+                            <button class="btn btn-secondary" onclick="app.bulkMovePhotos()" style="padding: 8px 16px;">📦 移動</button>
+                            <button class="btn btn-danger" onclick="app.bulkDeletePhotos()" style="padding: 8px 16px;">🗑️ 削除</button>
+                            <button class="btn btn-secondary" onclick="app.toggleSelectionMode()" style="padding: 8px 16px;">キャンセル</button>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="photos-list"></div>
             </div>
         </div>
 
-        <button class="fab" onclick="app.showCameraModal()" title="写真を撮影">📸</button>
+        <button class="fab" onclick="app.showCameraModal()">📸</button>
     </div>
 
-    <!-- Project Modal -->
+    <!-- 案件作成/編集モーダル -->
     <div id="project-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -1215,6 +772,12 @@
             </div>
             <div class="modal-body">
                 <form id="project-form">
+                    <div class="form-group">
+                        <label>📝 テンプレートから読み込み</label>
+                        <select id="template-select" onchange="app.loadTemplate(this.value)">
+                            <option value="">-- テンプレートを選択 --</option>
+                        </select>
+                    </div>
                     <div class="form-group">
                         <label>案件名 *</label>
                         <input type="text" name="name" required>
@@ -1247,12 +810,13 @@
             </div>
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="app.closeModal('project-modal')">キャンセル</button>
+                <button class="btn btn-secondary" onclick="app.saveAsTemplate()" style="background: #9c27b0; color: white;">📝 テンプレート保存</button>
                 <button class="btn btn-primary" onclick="app.saveProject()">保存</button>
             </div>
         </div>
     </div>
 
-    <!-- Signboard Modal -->
+    <!-- 看板作成/編集モーダル -->
     <div id="signboard-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -1297,7 +861,7 @@
         </div>
     </div>
 
-    <!-- Camera Modal -->
+    <!-- カメラモーダル -->
     <div id="camera-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -1313,6 +877,40 @@
                     <select id="camera-project-select" required></select>
                 </div>
                 <div class="form-group">
+                    <label>看板を選択（オーバーレイ表示）</label>
+                    <select id="camera-signboard-select">
+                        <option value="">看板なし</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>📋 工程区分</label>
+                    <select id="camera-category-process">
+                        <option value="">選択なし</option>
+                        <option value="foundation">基礎</option>
+                        <option value="structure">躯体</option>
+                        <option value="finishing">仕上げ</option>
+                        <option value="completion">完成</option>
+                        <option value="inspection">検査</option>
+                        <option value="other">その他</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>📍 撮影箇所</label>
+                    <input type="text" id="camera-category-location" placeholder="例: A棟1階、外構東側">
+                </div>
+                <div class="form-group">
+                    <label>🔧 工種</label>
+                    <select id="camera-category-worktype">
+                        <option value="">選択なし</option>
+                        <option value="architecture">建築</option>
+                        <option value="electrical">電気</option>
+                        <option value="plumbing">設備</option>
+                        <option value="civil">土木</option>
+                        <option value="landscape">外構</option>
+                        <option value="other">その他</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label>キャプション</label>
                     <input type="text" id="camera-caption" placeholder="写真の説明">
                 </div>
@@ -1326,208 +924,391 @@
         </div>
     </div>
 
-    <script src="/app.js?v=3"></script>
-    <script>
-        /**
-         * DeviceManager - Automatic device detection and manual UI switching
-         *
-         * Features:
-         * - Auto-detection based on User-Agent, screen size, touch support, and pixel ratio
-         * - Manual device switching with persistent localStorage
-         * - Priority: Saved preference > Auto-detection > Responsive CSS
-         */
-        class DeviceManager {
-            constructor() {
-                this.storageKey = 'preferredDevice';
-                this.init();
+    <!-- 看板編集モーダル -->
+    <div id="edit-signboard-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🖊️ 看板を編集（黒板モード）</h2>
+            </div>
+            <div class="modal-body">
+                <div class="edit-canvas-container">
+                    <canvas id="edit-canvas" class="edit-canvas"></canvas>
+                </div>
+                <div class="form-group">
+                    <label>描画ツール</label>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-secondary" onclick="app.setDrawTool('pen')" id="tool-pen">🖊️ ペン</button>
+                        <button class="btn btn-secondary" onclick="app.setDrawTool('eraser')" id="tool-eraser">🧹 消しゴム</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>ペンの太さ</label>
+                    <input type="range" id="pen-size" min="2" max="20" value="3" oninput="app.setPenSize(this.value)">
+                </div>
+                <div class="form-group">
+                    <label>ペンの色</label>
+                    <input type="color" id="pen-color" value="#000000" onchange="app.setPenColor(this.value)">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeEditSignboardModal()">キャンセル</button>
+                <button class="btn btn-danger" onclick="app.clearCanvas()">全消去</button>
+                <button class="btn btn-primary" onclick="app.saveEditedSignboard()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Before/After比較モーダル -->
+    <div id="comparison-modal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>📊 Before / After 比較</h2>
+            </div>
+            <div class="modal-body">
+                <div style="position: relative; width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 8px; overflow: hidden;">
+                    <img id="comparison-before" src="" alt="Before" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;">
+                    <img id="comparison-after" src="" alt="After" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0.5;">
+                </div>
+                <div style="margin-top: 16px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">透過度調整（Before ← → After）</label>
+                    <input type="range" id="comparison-slider" min="0" max="100" value="50"
+                           oninput="app.updateComparisonOpacity(this.value)"
+                           style="width: 100%; height: 8px; border-radius: 4px; background: linear-gradient(to right, #667eea 0%, #764ba2 100%);">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
+                    <div>
+                        <p style="font-weight: 600; margin-bottom: 4px;">📷 Before</p>
+                        <p id="comparison-before-info" style="font-size: 13px; color: #666;"></p>
+                    </div>
+                    <div>
+                        <p style="font-weight: 600; margin-bottom: 4px;">📷 After</p>
+                        <p id="comparison-after-info" style="font-size: 13px; color: #666;"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeComparisonModal()">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF出力設定モーダル -->
+    <div id="pdf-settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📄 PDF出力設定</h2>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>レイアウト</label>
+                    <select id="pdf-layout">
+                        <option value="1">1枚/ページ</option>
+                        <option value="2">2枚/ページ</option>
+                        <option value="4" selected>4枚/ページ</option>
+                        <option value="6">6枚/ページ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>会社名（ヘッダー）</label>
+                    <input type="text" id="pdf-company-name" placeholder="例: 株式会社○○建設">
+                </div>
+                <div class="form-group">
+                    <label>案件名（ヘッダー）</label>
+                    <input type="text" id="pdf-project-name" placeholder="自動設定">
+                </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="pdf-show-date" checked style="width: 20px; height: 20px;">
+                        <span>日付を表示（フッター）</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="pdf-show-page-number" checked style="width: 20px; height: 20px;">
+                        <span>ページ番号を表示</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closePDFSettingsModal()">キャンセル</button>
+                <button class="btn btn-primary" onclick="app.generatePDFWithSettings()">📄 PDF生成</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 写真注釈編集モーダル -->
+    <div id="edit-photo-modal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>✏️ 写真に注釈を追加</h2>
+            </div>
+            <div class="modal-body">
+                <div class="edit-canvas-container">
+                    <canvas id="annotation-canvas" class="edit-canvas"></canvas>
+                </div>
+                <div class="form-group">
+                    <label>描画ツール</label>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                        <button class="btn btn-secondary" onclick="app.setAnnotationTool('pen')" id="annotation-tool-pen">🖊️ ペン</button>
+                        <button class="btn btn-secondary" onclick="app.setAnnotationTool('arrow')" id="annotation-tool-arrow">➡️ 矢印</button>
+                        <button class="btn btn-secondary" onclick="app.setAnnotationTool('rectangle')" id="annotation-tool-rectangle">⬜ 四角</button>
+                        <button class="btn btn-secondary" onclick="app.setAnnotationTool('circle')" id="annotation-tool-circle">⭕ 丸</button>
+                        <button class="btn btn-secondary" onclick="app.setAnnotationTool('text')" id="annotation-tool-text">📝 テキスト</button>
+                        <button class="btn btn-secondary" onclick="app.setAnnotationTool('eraser')" id="annotation-tool-eraser">🧹 消しゴム</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>スタンプ</label>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                        <button class="btn btn-secondary" onclick="app.addStamp('OK')" style="background: #e8f5e9; color: #388e3c;">✅ OK</button>
+                        <button class="btn btn-secondary" onclick="app.addStamp('NG')" style="background: #ffebee; color: #d32f2f;">❌ NG</button>
+                        <button class="btn btn-secondary" onclick="app.addStamp('要確認')" style="background: #fff3e0; color: #f57c00;">⚠️ 要確認</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>線の太さ</label>
+                    <input type="range" id="annotation-line-width" min="2" max="15" value="3" oninput="app.setAnnotationLineWidth(this.value)">
+                </div>
+                <div class="form-group">
+                    <label>色</label>
+                    <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px;">
+                        <button onclick="app.setAnnotationColor('#ff0000')" style="background: #ff0000; height: 40px; border-radius: 8px; border: 2px solid #ddd;"></button>
+                        <button onclick="app.setAnnotationColor('#0000ff')" style="background: #0000ff; height: 40px; border-radius: 8px; border: 2px solid #ddd;"></button>
+                        <button onclick="app.setAnnotationColor('#00ff00')" style="background: #00ff00; height: 40px; border-radius: 8px; border: 2px solid #ddd;"></button>
+                        <button onclick="app.setAnnotationColor('#ffff00')" style="background: #ffff00; height: 40px; border-radius: 8px; border: 2px solid #ddd;"></button>
+                        <button onclick="app.setAnnotationColor('#000000')" style="background: #000000; height: 40px; border-radius: 8px; border: 2px solid #ddd;"></button>
+                        <button onclick="app.setAnnotationColor('#ffffff')" style="background: #ffffff; height: 40px; border-radius: 8px; border: 2px solid #333;"></button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeEditPhotoModal()">キャンセル</button>
+                <button class="btn btn-danger" onclick="app.clearAnnotationCanvas()">全消去</button>
+                <button class="btn btn-primary" onclick="app.saveAnnotatedPhoto()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Phase 7-1: ファイルアップロードモーダル -->
+    <div id="file-upload-modal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>📤 写真ファイルをアップロード</h2>
+            </div>
+            <div class="modal-body">
+                <!-- ドラッグ&ドロップエリア -->
+                <div id="drop-zone"
+                     ondrop="app.handleFileDrop(event)"
+                     ondragover="app.handleDragOver(event)"
+                     style="border: 2px dashed #667eea; border-radius: 12px; padding: 48px; text-align: center; background: #f5f7fa; margin-bottom: 24px; cursor: pointer;"
+                     onclick="document.getElementById('file-input').click()">
+                    <div style="font-size: 64px; margin-bottom: 16px;">📁</div>
+                    <h3 style="margin-bottom: 8px;">ファイルをドラッグ&ドロップ</h3>
+                    <p style="color: #666; margin-bottom: 16px;">または クリックしてファイルを選択</p>
+                    <input type="file" id="file-input" multiple accept="image/*" onchange="app.handleFileInput(event)" style="display: none;">
+                </div>
+
+                <!-- アップロード設定 -->
+                <div class="form-group">
+                    <label>案件 *</label>
+                    <select id="upload-project-select" required></select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label>📋 工程区分</label>
+                        <select id="upload-process-type">
+                            <option value="">選択なし</option>
+                            <option value="foundation">基礎</option>
+                            <option value="structure">躯体</option>
+                            <option value="finishing">仕上げ</option>
+                            <option value="completion">完成</option>
+                            <option value="inspection">検査</option>
+                            <option value="other">その他</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>🔧 工種</label>
+                        <select id="upload-work-type">
+                            <option value="">選択なし</option>
+                            <option value="architecture">建築</option>
+                            <option value="electrical">電気</option>
+                            <option value="plumbing">設備</option>
+                            <option value="civil">土木</option>
+                            <option value="landscape">外構</option>
+                            <option value="other">その他</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>📍 撮影箇所</label>
+                    <input type="text" id="upload-location" placeholder="例: A棟1階、外構東側">
+                </div>
+
+                <!-- プレビューエリア -->
+                <div style="margin-top: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h3>プレビュー (<span id="upload-count">0枚</span>)</h3>
+                    </div>
+                    <div id="upload-preview-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; max-height: 300px; overflow-y: auto;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📁</div>
+                            <p>ファイルをドラッグ&ドロップまたは選択してください</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeFileUploadModal()">キャンセル</button>
+                <button class="btn btn-primary" onclick="app.uploadFiles()">📤 アップロード開始</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- テンプレート管理モーダル -->
+    <div id="template-manager-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📝 テンプレート管理</h2>
+            </div>
+            <div class="modal-body">
+                <div id="templates-list" style="max-height: 400px; overflow-y: auto;">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📝</div>
+                        <p>保存されたテンプレートがありません</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeTemplateManager()">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .upload-preview-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .upload-preview-card img {
+            width: 100%;
+            aspect-ratio: 4/3;
+            object-fit: cover;
+        }
+
+        .upload-preview-info {
+            padding: 8px;
+        }
+
+        .upload-preview-info input {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        #drop-zone:hover {
+            background: #e8eaf6;
+            border-color: #5566d3;
+        }
+
+        /* ================================================
+           レスポンシブ対応: タブレット・PC版
+           ================================================ */
+
+        /* タブレット (768px以上) */
+        @media (min-width: 768px) {
+            .app {
+                max-width: 100%;
+                box-shadow: none;
             }
 
-            /**
-             * Auto-detect device type based on multiple factors
-             * @returns {string} 'mobile' | 'tablet' | 'desktop'
-             */
-            detectDevice() {
-                const ua = navigator.userAgent;
-                const width = window.innerWidth;
-                const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-                const pixelRatio = window.devicePixelRatio || 1;
-
-                // User-Agent detection
-                const isMobileUA = /iPhone|iPod|Android.*Mobile/i.test(ua);
-                const isTabletUA = /iPad|Android(?!.*Mobile)/i.test(ua);
-
-                // Screen size-based detection (primary factor)
-                if (width < 768) {
-                    return 'mobile';
-                } else if (width < 1024) {
-                    // For iPad and Android tablets
-                    if (isTabletUA || (hasTouch && pixelRatio > 1)) {
-                        return 'tablet';
-                    }
-                    // Small desktop windows
-                    return 'tablet';
-                } else {
-                    // Desktop
-                    return 'desktop';
-                }
+            header {
+                padding: 20px 32px;
             }
 
-            /**
-             * Get saved device preference from localStorage
-             * @returns {string|null}
-             */
-            getSavedDevice() {
-                try {
-                    return localStorage.getItem(this.storageKey);
-                } catch (e) {
-                    console.warn('LocalStorage not available:', e);
-                    return null;
-                }
+            header h1 {
+                font-size: 24px;
             }
 
-            /**
-             * Save device preference to localStorage
-             * @param {string} device
-             */
-            saveDevice(device) {
-                try {
-                    localStorage.setItem(this.storageKey, device);
-                    console.log('Device preference saved:', device);
-                } catch (e) {
-                    console.warn('Cannot save to localStorage:', e);
-                }
+            .tabs {
+                padding: 0 32px;
             }
 
-            /**
-             * Apply device-specific UI settings
-             * @param {string} device
-             */
-            applyDevice(device) {
-                document.body.setAttribute('data-device', device);
-                this.updateSwitcherButtons(device);
-
-                // Apply device-specific optimizations
-                if (device === 'mobile') {
-                    this.enableTouchOptimizations();
-                } else if (device === 'desktop') {
-                    this.enableKeyboardShortcuts();
-                }
-
-                console.log('Device applied:', device);
+            .tab {
+                padding: 20px;
+                font-size: 15px;
             }
 
-            /**
-             * Update switcher button states
-             * @param {string} device
-             */
-            updateSwitcherButtons(device) {
-                document.querySelectorAll('.device-switcher button').forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.device === device);
-                });
+            .content {
+                padding: 24px 32px;
             }
 
-            /**
-             * Enable touch optimizations for mobile devices
-             */
-            enableTouchOptimizations() {
-                document.querySelectorAll('.card').forEach(card => {
-                    card.addEventListener('touchstart', function() {
-                        this.style.opacity = '0.8';
-                    }, { passive: true });
-                    card.addEventListener('touchend', function() {
-                        this.style.opacity = '1';
-                    }, { passive: true });
-                });
+            .cards-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
             }
 
-            /**
-             * Enable keyboard shortcuts for desktop
-             */
-            enableKeyboardShortcuts() {
-                document.addEventListener('keydown', (e) => {
-                    // Ctrl/Cmd + N: New project
-                    if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-                        e.preventDefault();
-                        if (typeof app !== 'undefined') {
-                            app.showCreateProjectModal();
-                        }
-                    }
-                    // Ctrl/Cmd + P: New photo
-                    if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
-                        e.preventDefault();
-                        if (typeof app !== 'undefined') {
-                            app.showCameraModal();
-                        }
-                    }
-                });
-            }
-
-            /**
-             * Initialize device manager
-             */
-            init() {
-                // Priority: Saved preference > Auto-detection
-                const savedDevice = this.getSavedDevice();
-                const detectedDevice = this.detectDevice();
-                const device = savedDevice || detectedDevice;
-
-                this.applyDevice(device);
-
-                // Setup switcher button event listeners
-                document.addEventListener('DOMContentLoaded', () => {
-                    document.querySelectorAll('.device-switcher button').forEach(btn => {
-                        btn.addEventListener('click', () => {
-                            const selectedDevice = btn.dataset.device;
-                            this.saveDevice(selectedDevice);
-                            this.applyDevice(selectedDevice);
-                        });
-                    });
-                });
-
-                // Re-detect on window resize (only if no saved preference)
-                let resizeTimer;
-                window.addEventListener('resize', () => {
-                    clearTimeout(resizeTimer);
-                    resizeTimer = setTimeout(() => {
-                        if (!this.getSavedDevice()) {
-                            const newDevice = this.detectDevice();
-                            this.applyDevice(newDevice);
-                        }
-                    }, 300);
-                });
-
-                // Log device information
-                console.log('Device Manager initialized');
-                console.log('- Screen:', window.innerWidth, 'x', window.innerHeight);
-                console.log('- User-Agent:', navigator.userAgent);
-                console.log('- Touch:', 'ontouchstart' in window || navigator.maxTouchPoints > 0);
-                console.log('- Pixel Ratio:', window.devicePixelRatio || 1);
-                console.log('- Auto-detected:', detectedDevice);
-                console.log('- Saved preference:', savedDevice || 'None');
-                console.log('- Applied device:', device);
+            .modal-content {
+                max-width: 600px;
             }
         }
 
-        // Initialize Device Manager
-        const deviceManager = new DeviceManager();
-
-        // Backward compatibility: Keep ResponsiveUI for legacy code
-        class ResponsiveUI {
-            constructor() {
-                this.currentDevice = deviceManager.detectDevice();
+        /* PC (1024px以上) */
+        @media (min-width: 1024px) {
+            .app {
+                max-width: 100%;
             }
 
-            detectDevice() {
-                return deviceManager.detectDevice();
+            header {
+                padding: 24px 48px;
             }
 
-            applyDeviceSpecificSettings() {
-                // Handled by DeviceManager
+            header h1 {
+                font-size: 28px;
+            }
+
+            .tabs {
+                padding: 0 48px;
+            }
+
+            .content {
+                max-width: 1600px;
+                margin: 0 auto;
+                padding: 32px 48px;
+            }
+
+            .cards-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 24px;
+            }
+
+            .modal-content {
+                max-width: 800px;
             }
         }
 
-        const responsiveUI = new ResponsiveUI();
-    </script>
-    <script src="/pwa-init.js?v=3"></script>
+        /* 大画面 (1440px以上) */
+        @media (min-width: 1440px) {
+            .cards-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .modal-content {
+                max-width: 1000px;
+            }
+        }
+    </style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="/app.js?v=2"></script>
+    <script src="/pwa-init.js?v=2"></script>
 </body>
 </html>
+修正

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>動作テスト</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            margin: 10px;
+            cursor: pointer;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>📱 工事写真システム 動作テスト</h1>
+
+    <div class="test-section">
+        <h2>1. 基本動作テスト</h2>
+        <button onclick="test1()">クリックテスト</button>
+        <div id="result1" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. グローバル関数テスト</h2>
+        <button onclick="window.testFunction()">window関数テスト</button>
+        <div id="result2" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. API接続テスト</h2>
+        <button onclick="testAPI()">API呼び出しテスト</button>
+        <div id="result3" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. app.jsロードテスト</h2>
+        <button onclick="testAppJS()">app.js確認</button>
+        <div id="result4" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>5. モーダルテスト</h2>
+        <button onclick="showTestModal()">モーダル表示</button>
+        <div id="testModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:40px; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.3); z-index:9999;">
+            <h3>テストモーダル</h3>
+            <p>モーダルが正常に表示されました！</p>
+            <button onclick="hideTestModal()">閉じる</button>
+        </div>
+        <div id="modalOverlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9998;" onclick="hideTestModal()"></div>
+    </div>
+
+    <script>
+        // テスト1: 基本的なクリック
+        function test1() {
+            document.getElementById('result1').innerHTML = '✅ ボタンが動作しています！';
+            console.log('Test 1: OK');
+        }
+
+        // テスト2: windowオブジェクト経由
+        window.testFunction = function() {
+            document.getElementById('result2').innerHTML = '✅ window経由の関数が動作しています！';
+            console.log('Test 2: OK');
+        };
+
+        // テスト3: API接続
+        async function testAPI() {
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                document.getElementById('result3').innerHTML = `✅ API接続成功: ${data.service}`;
+                console.log('Test 3: OK', data);
+            } catch (error) {
+                document.getElementById('result3').innerHTML = `❌ API接続失敗: ${error.message}`;
+                console.error('Test 3: Error', error);
+            }
+        }
+
+        // テスト4: app.js読み込み確認
+        function testAppJS() {
+            let result = '';
+
+            // app.jsスクリプトタグの確認
+            const scripts = document.querySelectorAll('script[src*="app.js"]');
+            result += `📄 app.jsスクリプトタグ: ${scripts.length}個<br>`;
+            if (scripts.length > 0) {
+                result += `   パス: ${scripts[0].src}<br>`;
+            }
+
+            // window.appの確認
+            if (typeof window.app !== 'undefined') {
+                result += '✅ window.app が定義されています<br>';
+                result += `   型: ${typeof window.app}<br>`;
+                if (window.app.projects) {
+                    result += `   案件数: ${window.app.projects.length}<br>`;
+                }
+            } else {
+                result += '❌ window.app が未定義<br>';
+            }
+
+            // Appクラスの確認
+            if (typeof App !== 'undefined') {
+                result += '✅ Appクラスが定義されています<br>';
+            } else {
+                result += '❌ Appクラスが未定義<br>';
+            }
+
+            document.getElementById('result4').innerHTML = result;
+            console.log('Test 4 詳細:', {
+                scripts: scripts.length,
+                windowApp: typeof window.app,
+                AppClass: typeof App
+            });
+        }
+
+        // テスト5: モーダル表示/非表示
+        function showTestModal() {
+            document.getElementById('testModal').style.display = 'block';
+            document.getElementById('modalOverlay').style.display = 'block';
+        }
+
+        function hideTestModal() {
+            document.getElementById('testModal').style.display = 'none';
+            document.getElementById('modalOverlay').style.display = 'none';
+        }
+
+        // ページ読み込み時の情報表示
+        window.addEventListener('load', () => {
+            console.log('=== 動作テストページ読み込み完了 ===');
+            console.log('現在のURL:', window.location.href);
+            console.log('app変数:', typeof window.app);
+            console.log('=====================');
+        });
+    </script>
+
+    <!-- app.jsを読み込んでテスト -->
+    <script src="/app.js?v=2"></script>
+    <script>
+        // app.js読み込み後の確認
+        console.log('app.js読み込み試行後:', typeof window.app);
+    </script>
+</body>
+</html>

@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>📸 工事写真撮影</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', sans-serif;
+            background: #000;
+            color: white;
+            overflow: hidden;
+        }
+
+        #camera-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        #canvas {
+            display: none;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 24px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .btn-capture {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: white;
+            border: 4px solid rgba(255,255,255,0.3);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn-capture:active {
+            transform: scale(0.95);
+        }
+
+        .btn-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .preview-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #000;
+            display: none;
+            flex-direction: column;
+        }
+
+        .preview-container.active {
+            display: flex;
+        }
+
+        #preview-image {
+            flex: 1;
+            object-fit: contain;
+        }
+
+        .preview-actions {
+            padding: 16px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-cancel {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .btn-upload {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .status {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status.active {
+            display: block;
+        }
+
+        #project-selector {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            right: 16px;
+            background: rgba(0,0,0,0.8);
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            color: white;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div id="camera-container">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas"></canvas>
+
+        <select id="project-selector">
+            <option value="">案件を選択してください</option>
+        </select>
+
+        <div class="controls">
+            <button class="btn-icon" onclick="goBack()">✕</button>
+            <button class="btn-capture" onclick="capture()"></button>
+            <button class="btn-icon" onclick="switchCamera()">🔄</button>
+        </div>
+
+        <div class="status" id="status"></div>
+    </div>
+
+    <div class="preview-container" id="preview-container">
+        <img id="preview-image" />
+        <div class="preview-actions">
+            <button class="btn btn-cancel" onclick="retake()">撮り直し</button>
+            <button class="btn btn-upload" onclick="uploadPhoto()">アップロード</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        let stream = null;
+        let currentCamera = 'environment'; // 'user' or 'environment'
+        let capturedImageBlob = null;
+        let projects = [];
+
+        async function init() {
+            // 案件一覧を読み込み
+            await loadProjects();
+
+            // カメラを起動
+            await startCamera();
+        }
+
+        async function loadProjects() {
+            try {
+                const response = await fetch(`${API_BASE}/projects`);
+                const data = await response.json();
+
+                if (data.success) {
+                    projects = data.data.items || [];
+                    renderProjectSelector();
+                }
+            } catch (error) {
+                console.error('案件の読み込みに失敗:', error);
+                showStatus('案件の読み込みに失敗しました');
+            }
+        }
+
+        function renderProjectSelector() {
+            const selector = document.getElementById('project-selector');
+            selector.innerHTML = '<option value="">案件を選択してください</option>';
+
+            projects.forEach(project => {
+                const option = document.createElement('option');
+                option.value = project.id;
+                option.textContent = project.name;
+                selector.appendChild(option);
+            });
+        }
+
+        async function startCamera() {
+            try {
+                const constraints = {
+                    video: {
+                        facingMode: currentCamera,
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    },
+                    audio: false
+                };
+
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                const video = document.getElementById('video');
+                video.srcObject = stream;
+                await video.play();
+            } catch (error) {
+                console.error('カメラの起動に失敗:', error);
+                showStatus('カメラにアクセスできません');
+            }
+        }
+
+        async function switchCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+
+            currentCamera = currentCamera === 'environment' ? 'user' : 'environment';
+            await startCamera();
+        }
+
+        function capture() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+
+            // Canvasからblobを生成
+            canvas.toBlob((blob) => {
+                capturedImageBlob = blob;
+
+                // プレビュー表示
+                const previewImage = document.getElementById('preview-image');
+                previewImage.src = URL.createObjectURL(blob);
+
+                document.getElementById('preview-container').classList.add('active');
+            }, 'image/jpeg', 0.9);
+        }
+
+        function retake() {
+            document.getElementById('preview-container').classList.remove('active');
+            capturedImageBlob = null;
+        }
+
+        async function uploadPhoto() {
+            const projectId = document.getElementById('project-selector').value;
+
+            if (!projectId) {
+                showStatus('案件を選択してください');
+                return;
+            }
+
+            if (!capturedImageBlob) {
+                showStatus('写真が撮影されていません');
+                return;
+            }
+
+            try {
+                showStatus('アップロード中...');
+
+                const formData = new FormData();
+                formData.append('photo', capturedImageBlob, `photo-${Date.now()}.jpg`);
+                formData.append('projectId', projectId);
+                formData.append('caption', `工事写真 ${new Date().toLocaleString('ja-JP')}`);
+
+                const response = await fetch(`${API_BASE}/photos/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showStatus('✓ アップロード完了!');
+                    setTimeout(() => {
+                        retake();
+                    }, 1500);
+                } else {
+                    showStatus('アップロードに失敗しました');
+                }
+            } catch (error) {
+                console.error('アップロードエラー:', error);
+                showStatus('アップロードに失敗しました');
+            }
+        }
+
+        function showStatus(message) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.classList.add('active');
+            setTimeout(() => {
+                status.classList.remove('active');
+            }, 3000);
+        }
+
+        function goBack() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            window.history.back();
+        }
+
+        // ページ読み込み時に初期化
+        init();
+    </script>
+</body>
+</html>

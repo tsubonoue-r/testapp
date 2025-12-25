@@ -111,16 +111,25 @@ app.get('*', async (c) => {
   // Get the requested path
   let path = c.req.path;
 
-  // Root path -> serve index.html
-  if (path === '/') {
-    path = '/index.html';
+  // Root path OR /pc -> device detection
+  if (path === "/" || path === "/pc") {
+    // デバイス判定: User-Agentから判別
+    const userAgent = c.req.header("user-agent") || "";
+    const isMobile = /Mobile|Android|iPhone/i.test(userAgent);
+    const isTablet = /iPad|Android.*Tablet/i.test(userAgent);
+    const isDesktop = !isMobile && !isTablet;
+
+    // PCブラウザならpc.html、スマホ・タブレットならindex.html
+    path = isDesktop ? "/pc.html" : "/index.html";
   }
 
   try {
     // Try to fetch from Workers Assets
     if (c.env.ASSETS) {
-      // Workers Assets Fetcher accepts path strings directly
-      const assetResponse = await c.env.ASSETS.fetch(path);
+      // Use URL string format for Workers Assets (Cloudflare recommended format)
+      // See: https://developers.cloudflare.com/workers/static-assets/binding/
+      const assetUrl = `https://assets.local${path}`;
+      const assetResponse = await c.env.ASSETS.fetch(assetUrl);
 
       if (assetResponse.ok) {
         // Clone the response to modify headers
@@ -142,8 +151,9 @@ app.get('*', async (c) => {
     // If file not found and not a file request (no extension), try SPA fallback
     if (!path.includes('.')) {
       if (c.env.ASSETS) {
-        // Use path string directly for SPA fallback
-        const indexResponse = await c.env.ASSETS.fetch('/index.html');
+        // Use URL string format for SPA fallback
+        const indexUrl = "https://assets.local/index.html";
+        const indexResponse = await c.env.ASSETS.fetch(indexUrl);
         if (indexResponse.ok) {
           const response = new Response(indexResponse.body, indexResponse);
           response.headers.set('Content-Type', 'text/html; charset=utf-8');
