@@ -28,8 +28,8 @@ Resources:
   AdminDashboardApi:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ./
-      Handler: dist/lambda.handler
+      CodeUri: dist/
+      Handler: lambda.handler
       Description: Admin Dashboard API for construction signboard photo system
       Events:
         ApiEvent:
@@ -48,28 +48,10 @@ Resources:
         Project: testapp
         Component: admin-dashboard
 
-  # API Gateway HTTP API
-  HttpApi:
-    Type: AWS::Serverless::HttpApi
-    Properties:
-      CorsConfiguration:
-        AllowOrigins:
-          - '*'
-        AllowMethods:
-          - GET
-          - POST
-          - PUT
-          - DELETE
-          - PATCH
-          - OPTIONS
-        AllowHeaders:
-          - '*'
-        MaxAge: 300
-
 Outputs:
   ApiEndpoint:
     Description: "API Gateway endpoint URL"
-    Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/"
+    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/"
 
   FunctionArn:
     Description: "Lambda Function ARN"
