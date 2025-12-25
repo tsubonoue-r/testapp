@@ -173,3 +173,5 @@ data/
 *.db
 *.db-shm
 *.db-wal
+.aws-sam/
+response.json
